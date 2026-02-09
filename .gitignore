@@ -1,0 +1,56 @@
+# R and RStudio files
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# knitr and R Markdown
+*_cache/
+*_files/
+*.utf8.md
+*.knit.md
+
+# R package development
+*.tar.gz
+*.Rcheck/
+.Rbuildignore
+
+# Temporary files
+*~
+*.tmp
+*.temp
+
+# macOS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# IDEs - Positron and RStudio
+.positron/
+.positron-settings/
+.rstudio/
+.Rproj.user/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.Renviron
+
+# renv dependency management (if using renv)
+renv/library/
+renv/staging/
+
+# Don't ignore these important files for assignment submission
+!*.Rmd
+!*.html
+!*.md
+!data/
+!README.md

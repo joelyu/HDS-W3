@@ -54,3 +54,7 @@ renv/staging/
 !*.md
 !data/
 !README.md
+
+# Data: commit processed/, ignore large raw files
+data/brca_metabric/metabric-large/
+data/METABRIC data-20260209/

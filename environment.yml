@@ -1,0 +1,31 @@
+name: immfiltration
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  # R core
+  - r-base>=4.3
+  # Quarto rendering
+  - quarto
+  - r-knitr
+  - r-rmarkdown
+  # Data wrangling
+  - r-tidyverse
+  # Visualisation
+  - r-pheatmap
+  - r-corrplot
+  - r-ggpubr
+  - r-patchwork
+  - r-rcolorbrewer
+  # Survival analysis
+  - r-survival
+  - r-survminer
+  # Tables
+  - r-gtsummary
+  # UpSet plots
+  - r-upsetr
+  # Forest plots
+  - r-forestplot
+  # Bioconductor — bioconda dependency chains broken on osx-arm64 (as of Feb 2026).
+  # After creating env, install from R:
+  #   Rscript -e 'if (!require("BiocManager")) install.packages("BiocManager"); BiocManager::install(c("ComplexHeatmap", "maftools", "cBioPortalData"))'

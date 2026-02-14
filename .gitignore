@@ -50,6 +50,7 @@ renv/staging/
 
 # Don't ignore these important files for assignment submission
 !*.Rmd
+!*.qmd
 !*.html
 !*.md
 !data/
@@ -58,3 +59,4 @@ renv/staging/
 # Data: commit processed/, ignore large raw files
 data/brca_metabric/metabric-large/
 data/METABRIC data-20260209/
+data/processed/immune_scores.csv

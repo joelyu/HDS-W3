@@ -1,0 +1,198 @@
+---
+title: "Immune Cell Infiltration Across Breast Cancer Subtypes: A Marker Gene Analysis of the METABRIC Cohort"
+author: "cyy36@cam.ac.uk"
+date: today
+bibliography: references.bib
+csl: nature.csl
+link-citations: true
+format:
+  html:
+    toc: true
+    toc-location: right
+    code-fold: true
+    theme:
+      dark: darkly
+      light: flatly
+---
+
+# Cover Page
+
+<center>
+![](https://onlinecareeraccelerators.pace.cam.ac.uk/hubfs/CAM%20DS%20PACE/Professional%20and%20Continuing%20Education_V_reversed%20colour%201.svg)
+</center>
+
+<h3 style="text-align: center;">MSt Healthcare Data Science</h3>
+
+#### Authentication of practice
+
+|   |   |
+|---|---|
+|I confirm that I have fully read and understood the assignment brief for this module.| **Y** |
+
+#### Details
+
+|   |   |
+|---|---|
+|Name: Chung Yan|Surname: Yu|
+|Submission Date|  |
+|Word Count: whole assignment including codes|  |
+|Word Count: main body excluding abstract, references and supplementary materials|  |
+
+#### Permission to share your assignment
+
+I do give permission to share my assignment with future MSt participants.
+
+#### University statement of originality
+
+This assignment is the result of my own work and includes nothing which is the outcome of work done in collaboration except as declared in the Preface and specified in the text. It is not substantially the same as any that I have previously submitted for a degree or diploma or other qualification at the University of Cambridge or any other university or similar institution, or that is being concurrently submitted, except as declared in the Preface and specific in the text. I further state that no substantial part of my Portfolio has already been submitted, nor is being concurrently submitted for any such degree, diploma or other qualification at the University of Cambridge or any other university or similar institution except as declared in the Preface and specified in the text.
+
+|   |   |
+|---|---|
+|I confirm the statement of originality as above| **Y** |
+
+
+#### Questions for reflection
+
+Self-assessment is an important aspect of feedback literacy, which is, in turn, key to the development of expertise. As you proceed through the MSt Healthcare data science programme, we hope that you will make use of the following prompts to assess your own work on assignments. Specific assignment briefs will likely indicate which of these to address for which assessments, but, in general, we expect you to respond to one or two for each assignment on your course.
+
+For each of the questions, do not spend too long answering – keep it brief. For each question you answer, limit yourself to no more than three items. And please remember, this is optional and developmental: these cover sheets are designed to create space for self-assessment and feedback dialogue, rather than additional assignment workload.
+
+1. Which aspects of this assignment are you most uncertain about and/or would most like to receive feedback on?
+
+
+2. What elements are you left pondering after this assignment that you would like to discuss further?
+
+
+3. How have you incorporated feedback from peers and tutors into this assignment?
+
+
+4. How, and to what extent, have you been able to incorporate feedback on previous course work into this assignment?
+
+
+5. Using the wording in the rubric, how would you describe the quality of the different aspects of your work?
+
+
+### Declaration of the use of generative AI
+
+|   |   |
+|---|---|
+|Which permitted use of generative AI are you acknowledging?| Semantic search of literature and notes, outline creation, output formatting, informed feedback |
+|Which generative AI tool did you use (name and version)?| Claude Code v2.0.7x, M365 CoPilot |
+|What did you use the tool for?| Searching for relevant journal publications, collating notes in my Obsidian vault, `.bib` file curation |
+|How have you used or changed the generative AI's output| My collated notes always stay in point form so that I write out the paragraphs in my own words. Feedback provided by the GenAI models are weighed and assessed before being acted on. |
+
+---
+
+```{r setup, message=FALSE, warning=FALSE, output=FALSE}
+#| label: setup
+
+# --- Package installation and loading ---
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+if (!require(tidyverse, quietly = TRUE))    install.packages("tidyverse")
+if (!require(survival, quietly = TRUE))     install.packages("survival")
+if (!require(survminer, quietly = TRUE))    install.packages("survminer")
+if (!require(gtsummary, quietly = TRUE))    install.packages("gtsummary")
+if (!require(UpSetR, quietly = TRUE))       install.packages("UpSetR")
+if (!require(forestplot, quietly = TRUE))   install.packages("forestplot")
+if (!require(pheatmap, quietly = TRUE))     install.packages("pheatmap")
+if (!require(ggpubr, quietly = TRUE))       install.packages("ggpubr")
+if (!require(patchwork, quietly = TRUE))    install.packages("patchwork")
+if (!require(RColorBrewer, quietly = TRUE)) install.packages("RColorBrewer")
+
+if (!require(BiocManager, quietly = TRUE))  install.packages("BiocManager")
+if (!require(ComplexHeatmap, quietly = TRUE)) BiocManager::install("ComplexHeatmap")
+if (!require(maftools, quietly = TRUE))       BiocManager::install("maftools")
+if (!require(cBioPortalData, quietly = TRUE)) BiocManager::install("cBioPortalData")
+
+library(tidyverse)
+library(survival)
+library(survminer)
+library(gtsummary)
+library(UpSetR)
+library(forestplot)
+library(pheatmap)
+library(ComplexHeatmap)
+library(maftools)
+library(ggpubr)
+library(patchwork)
+library(RColorBrewer)
+
+# --- Data paths (relative to repo root) ---
+proc_dir  <- "data/processed"
+clin_file <- file.path(proc_dir, "clinical.csv")
+mut_file  <- file.path(proc_dir, "mutations.maf")
+expr_file <- file.path(proc_dir, "expression_immune_markers.csv")
+```
+
+```{r data-cleaning, message=FALSE, warning=FALSE, output=FALSE}
+#| label: data-cleaning
+source("scripts/00-data-cleaning.R")
+```
+
+# Abstract
+
+<!-- TODO: Write last. 300-word limit. -->
+
+# Introduction
+
+<!-- TODO -->
+
+# Methods
+
+<!-- TODO -->
+
+# Results
+
+## Task 1: Data Exploration
+
+```{r scoring, message=FALSE, warning=FALSE, output=FALSE}
+#| label: immune-cell-scoring
+source("scripts/01-immune-cell-scoring.R")
+```
+
+```{r task1, message=FALSE, warning=FALSE, fig.width=10, fig.height=6}
+#| label: task1-exploration
+source("scripts/02-task1-exploration.R")
+```
+
+## Q1: Immune Cell Expression Across PAM50 Subtypes
+
+```{r q1, message=FALSE, warning=FALSE, fig.width=14, fig.height=10}
+#| label: q1-pam50-immune
+# source("scripts/03-q1-pam50-immune.R")
+```
+
+## Q2: Mutation Patterns and Immune Associations
+
+```{r q2, message=FALSE, warning=FALSE, fig.width=12, fig.height=8}
+#| label: q2-mutations
+# source("scripts/04-q2-mutations.R")
+```
+
+## Q3: Immune Scores and Clinical Outcomes
+
+```{r q3, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+#| label: q3-survival
+# source("scripts/05-q3-survival.R")
+```
+
+## Extension: Within-Subtype Immune Stratification
+
+```{r extension, message=FALSE, warning=FALSE, fig.width=8, fig.height=6}
+#| label: extension
+# source("scripts/06-extension.R")
+```
+
+# Discussion
+
+<!-- TODO -->
+
+# Conclusion
+
+<!-- TODO -->
+
+# References
+
+::: {#refs}
+:::

@@ -36,7 +36,7 @@ The submission qmd sources scripts in order. No need to render intermediate file
 ├── HDS_03_YuChungYan_2602.qmd            # Final submission — sources scripts/
 ├── scripts/
 │   ├── 00-data-cleaning.R                # Raw cBioPortal → data/processed/
-│   ├── 01-danaher-scoring.R              # Compute 13 immune cell type scores
+│   ├── 01-immune-cell-scoring.R          # Compute 13 immune cell type scores
 │   ├── 02-task1-exploration.R            # Cohort table, UpSet plot, bias check
 │   ├── 03-q1-pam50-immune.R              # Heatmap, violins by PAM50
 │   ├── 04-q2-mutations.R                 # Oncoplot, mutation-immune tests
@@ -45,7 +45,7 @@ The submission qmd sources scripts in order. No need to render intermediate file
 ├── data/processed/                       # Cleaned datasets (committed to git)
 │   ├── clinical.csv                      # Patient + sample clinical merged
 │   ├── mutations.maf                     # Stripped MAF for maftools
-│   └── expression_danaher_markers.tsv    # 60 marker genes, log2 intensity
+│   └── expression_immune_markers.csv     # 60 marker genes, log2 intensity
 ├── environment.yml                       # Mamba environment spec
 ├── README.md
 └── .gitignore

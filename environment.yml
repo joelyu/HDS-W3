@@ -26,6 +26,8 @@ dependencies:
   - r-upsetr
   # Forest plots
   - r-forestplot
+  # System dependency for Bioconductor packages (rtracklayer → cBioPortalData)
+  - r-xml
   # Bioconductor — bioconda dependency chains broken on osx-arm64 (as of Feb 2026).
   # After creating env, install from R:
-  #   Rscript -e 'if (!require("BiocManager")) install.packages("BiocManager"); BiocManager::install(c("ComplexHeatmap", "maftools", "cBioPortalData"))'
+  #   Rscript -e 'options(repos = c(CRAN = "https://cloud.r-project.org")); install.packages("BiocManager"); BiocManager::install(c("ComplexHeatmap", "maftools", "cBioPortalData"))'

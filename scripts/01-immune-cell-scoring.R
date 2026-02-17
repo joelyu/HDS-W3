@@ -9,33 +9,15 @@
 # Output: data/processed/immune_scores.csv
 #         Objects in memory: scores_df, scores_mat, expr_mat, immune_markers
 #
-# Expects: proc_dir, expr_file defined by parent qmd
+# Expects: proc_dir, expr_file (falls back to defaults if not set by parent qmd)
 # =============================================================================
 
-# --- 14 cell types, 60 marker genes (Danaher et al. 2017, Table 1) ---
-# CD4 derived as T-cell score minus CD8 score (r=0.65 vs flow cytometry, Table 2)
-# Works with log2 intensity: subtraction ≈ log2(T-cell / CD8) ratio
-# Gene alias: KIAA0125 → FAM30A (verified via HGNC)
-# Platform-absent: TPSB2, XCL2 (not on Illumina HT-12 v3)
-immune_markers <- list(
-  "B-cells"         = c("BLK", "CD19", "FCRL2", "MS4A1", "FAM30A",
-                         "TNFRSF17", "TCL1A", "SPIB", "PNOC"),
-  "CD45"            = c("PTPRC"),
-  "Cytotoxic cells" = c("PRF1", "GZMA", "GZMB", "NKG7", "GZMH",
-                         "KLRK1", "KLRB1", "KLRD1", "CTSW", "GNLY"),
-  "DC"              = c("CCL13", "CD209", "HSD11B1"),
-  "Exhausted CD8"   = c("LAG3", "CD244", "EOMES", "PTGER4"),
-  "Macrophages"     = c("CD68", "CD84", "CD163", "MS4A4A"),
-  "Mast cells"      = c("TPSAB1", "CPA3", "MS4A2", "HDC"),
-  "Neutrophils"     = c("S100A9", "S100A8", "CEACAM3", "SPI1", "FPR1",
-                         "SIGLEC5", "CSF3R", "FCAR", "FCGR3B"),
-  "NK CD56dim"      = c("KIR2DL3", "KIR3DL1", "KIR3DL2", "IL21R"),
-  "NK cells"        = c("XCL1", "NCR1"),
-  "T-cells"         = c("CD6", "CD3D", "CD3E", "SH2D1A", "TRAT1", "CD3G"),
-  "Th1 cells"       = c("TBX21"),
-  "Treg"            = c("FOXP3"),
-  "CD8 T cells"     = c("CD8A", "CD8B")
-)
+if (!exists("proc_dir"))  proc_dir  <- file.path("data", "processed")
+if (!exists("expr_file")) expr_file <- file.path(proc_dir, "expression_immune_markers.csv")
+
+# --- 14 cell types, 62 marker genes (single source of truth) -----------------
+# CD4 derived below as T-cell score minus CD8 score (r=0.65 vs flow cytometry)
+source("scripts/_immune_markers.R")
 
 # --- Load expression data (pre-processed marker gene subset, log2 intensity) ---
 expr_raw <- read.csv(expr_file, check.names = FALSE)
@@ -77,8 +59,8 @@ scores_df <- scores_mat %>%
   as.data.frame() %>%
   rownames_to_column("PATIENT_ID")
 
-# Clean column names (spaces → underscores)
-colnames(scores_df) <- gsub(" ", "_", colnames(scores_df))
+# Clean column names (spaces/hyphens → underscores for safe read.csv round-trips)
+colnames(scores_df) <- gsub("[ -]", "_", colnames(scores_df))
 
 # --- Save to CSV ---
 write.csv(scores_df, file.path(proc_dir, "immune_scores.csv"), row.names = FALSE)

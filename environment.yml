@@ -17,6 +17,7 @@ dependencies:
   - r-ggpubr
   - r-patchwork
   - r-rcolorbrewer
+  - r-ggrepel
   # Survival analysis
   - r-survival
   - r-survminer
@@ -26,6 +27,8 @@ dependencies:
   - r-upsetr
   # Forest plots
   - r-forestplot
+  # Compact letter display for pairwise comparisons
+  - r-multcompview
   # System dependency for Bioconductor packages (rtracklayer → cBioPortalData)
   - r-xml
   # Bioconductor — bioconda dependency chains broken on osx-arm64 (as of Feb 2026).

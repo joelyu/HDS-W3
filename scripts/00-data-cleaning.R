@@ -16,25 +16,9 @@
 if (!exists("proc_dir")) proc_dir <- file.path("data", "processed")
 dir.create(proc_dir, showWarnings = FALSE, recursive = TRUE)
 
-# --- Danaher marker genes (inline to keep 00 self-contained) -----------------
-# 62 genes from Danaher et al. 2017, Table 1 (CD4 omitted)
-# Includes KIAA0125 alias FAM30A; also requests original name as fallback
-# TPSB2 and XCL2 are absent from Illumina HT-12 v3 (platform limitation)
-danaher_genes <- c(
-  "BLK", "CD19", "FCRL2", "MS4A1", "FAM30A", "KIAA0125",
-  "TNFRSF17", "TCL1A", "SPIB", "PNOC",
-  "PTPRC",
-  "PRF1", "GZMA", "GZMB", "NKG7", "GZMH", "KLRK1", "KLRB1", "KLRD1", "CTSW", "GNLY",
-  "CCL13", "CD209", "HSD11B1",
-  "LAG3", "CD244", "EOMES", "PTGER4",
-  "CD68", "CD84", "CD163", "MS4A4A",
-  "TPSAB1", "TPSB2", "CPA3", "MS4A2", "HDC",
-  "S100A9", "S100A8", "CEACAM3", "SPI1", "FPR1", "SIGLEC5", "CSF3R", "FCAR", "FCGR3B",
-  "KIR2DL3", "KIR3DL1", "KIR3DL2", "IL21R",
-  "XCL1", "XCL2", "NCR1",
-  "CD6", "CD3D", "CD3E", "SH2D1A", "TRAT1", "CD3G",
-  "TBX21", "FOXP3", "CD8A", "CD8B"
-)
+# --- Danaher marker genes (single source of truth in _immune_markers.R) ------
+source("scripts/_immune_markers.R")
+danaher_genes <- unique(c(unlist(immune_markers), "KIAA0125"))  # KIAA0125 = API fallback alias for FAM30A
 
 STUDY_ID <- "brca_metabric"
 .log <- character()
@@ -81,6 +65,9 @@ api_success <- tryCatch({
       radiotherapy     = RADIO_THERAPY,
       breast_surgery   = BREAST_SURGERY,
       histological_subtype = HISTOLOGICAL_SUBTYPE,
+      # NOTE: CLAUDIN_SUBTYPE is cBioPortal's "PAM50 + Claudin-low subtype" field —
+      # a combined classification whose provenance is undocumented. We retain the
+      # raw values here; claudin-low is excluded in downstream analysis scripts.
       pam50_subtype    = CLAUDIN_SUBTYPE,
       intclust_subtype = INTCLUST,
       cohort           = COHORT,
@@ -108,26 +95,48 @@ api_success <- tryCatch({
     httr::add_headers(accept = "application/json")
   )
   httr::stop_for_status(mut_resp, "fetch mutation data from cBioPortal")
-  mut_raw <- jsonlite::fromJSON(httr::content(mut_resp, as = "text", encoding = "UTF-8"))
+  mut_raw <- jsonlite::fromJSON(
+    httr::content(mut_resp, as = "text", encoding = "UTF-8"),
+    flatten = TRUE
+  )
+
+  # API returns entrezGeneId but not Hugo symbols — look them up separately
+  entrez_col <- grep("entrezGeneId", colnames(mut_raw), value = TRUE)[1]
+  if (is.na(entrez_col)) stop("No entrezGeneId column found in mutation data")
+
+  gene_ids <- unique(as.integer(mut_raw[[entrez_col]]))
+  gene_resp <- httr::POST(
+    "https://www.cbioportal.org/api/genes/fetch",
+    body = jsonlite::toJSON(gene_ids),
+    httr::content_type_json(),
+    httr::add_headers(accept = "application/json")
+  )
+  httr::stop_for_status(gene_resp, "fetch gene symbols from cBioPortal")
+  gene_map <- jsonlite::fromJSON(
+    httr::content(gene_resp, as = "text", encoding = "UTF-8")
+  )
+  mut_raw$Hugo_Symbol <- gene_map$hugoGeneSymbol[
+    match(as.integer(mut_raw[[entrez_col]]), gene_map$entrezGeneId)
+  ]
 
   # Map REST API column names to standard MAF names for maftools
   maf_rename <- c(
-    gene.hugoGeneSymbol = "Hugo_Symbol", chr = "Chromosome",
+    chr = "Chromosome",
     startPosition = "Start_Position", endPosition = "End_Position",
-    referenceAllele = "Reference_Allele", tumorSeqAllele2 = "Tumor_Seq_Allele2",
+    referenceAllele = "Reference_Allele", variantAllele = "Tumor_Seq_Allele2",
     mutationType = "Variant_Classification", variantType = "Variant_Type",
     sampleId = "Tumor_Sample_Barcode", proteinChange = "HGVSp_Short"
   )
 
-  # Flatten nested gene column if present
-  if ("gene" %in% colnames(mut_raw) && is.data.frame(mut_raw$gene)) {
-    mut_raw$gene.hugoGeneSymbol <- mut_raw$gene$hugoGeneSymbol
-  }
-
   avail_cols <- intersect(names(maf_rename), colnames(mut_raw))
-  maf_clean <- mut_raw[, avail_cols, drop = FALSE]
+  maf_clean <- mut_raw[, c("Hugo_Symbol", avail_cols), drop = FALSE]
   for (old_name in avail_cols) {
     colnames(maf_clean)[colnames(maf_clean) == old_name] <- maf_rename[old_name]
+  }
+
+  # Verify Hugo_Symbol is populated
+  if (all(is.na(maf_clean$Hugo_Symbol))) {
+    stop("Hugo_Symbol lookup failed — all values are NA")
   }
 
   write.table(maf_clean, file.path(proc_dir, "mutations.maf"),

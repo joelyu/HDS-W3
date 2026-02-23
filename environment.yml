@@ -13,16 +13,20 @@ dependencies:
   - r-tidyverse
   # Visualisation
   - r-pheatmap
-  - r-corrplot
   - r-ggpubr
   - r-patchwork
   - r-rcolorbrewer
   - r-ggrepel
+  # Colour ramps (used by ComplexHeatmap)
+  - r-circlize
+  # Clustering
+  - r-cluster
   # Survival analysis
   - r-survival
   - r-survminer
   # Tables
   - r-gtsummary
+  - r-kableextra
   # UpSet plots
   - r-upsetr
   # Forest plots

@@ -17,8 +17,8 @@ format:
     toc-depth: 2
     embed-resources: true
     theme:
-      light: flatly
       dark: darkly
+      light: flatly
 ---
 
 # Cover Page {.unnumbered .unlisted}
@@ -91,15 +91,17 @@ For each of the questions, do not spend too long answering – keep it brief. Fo
 
 # Abstract
 
-The ability for immune cells to infiltrate the tumour microenvironment (TME).
+The ability for immune cells to infiltrate the tumour microenvironment (TME) plays a key role in the biological war machine taking on breast cancer.
 
 # Introduction
 
-The ability for immune cells to infiltrate the tumour microenvironment (TME).
+Tumour cells evading the detection and wrath of the immune system is a recognised hallmark of cancer[@hanahan2011hallmarks], and breast cancer is no exception[@gildelalcazar2020immune]. The interplay between tumour cells, immune cells and other local factors form the tumour microenvironment (TME), and research in the TME of breast cancers has yielded clinical applications[@li2021TME]. The amount of tumour infiltrating immune cells in breast cancers has shown prognostic value[@salgado2015evaluation], and this amount and prognostic impact varies across breast cancer's molecular subtypes[@stanton2016clinical]. These subtypes are defined by gene expression[@perou2000molecular], and are popularised and commercialised as the PAM50 gene expression panel, which has its own prognostic significance[@parker2009supervised]. The subtypes include luminal A, luminal B, HER2-enriched, basal-like and normal-like.
+
+The METABRIC cohort from Curtis et al.[@curtis2012genomic] is one of the larger datasets on breast cancer containing clinical, gene expression and mutation data of 2,509 patients. METABRIC's analysis has already shown immune infiltration in one of their integrative clusters (IntClust4), showing deletions in T cell receptors and mRNA amplification for immune cell activity, but stopped short of fully characterising the immune cells involved. Jiang et al.[@jiang2020tumour] characterised immune cell infiltration in the METABRIC cohort using CIBERSORT[@newman2015CIBERSORT], developing new immunotypes with prognostic significance. However, CIBERSORT is more of a black box model, a computational approach using deconvolution to estimate cell proportions from RNA mixtures. Therefore there exists a need to use a transparent approach to score immune cell infiltration in METABRIC's breast tumour samples, and scrutinise any prognostic value from such scoring.
+
+A panel of immune cell marker genes developed by Danaher et al.[@danaher2017gene] were used to score immune infiltration in the METABRIC cohort. The infiltration of different immune cell types as well as their prognostic value were investigated across the PAM50 subtypes. The goal is to characterise the immune landscape across PAM50 subtypes, identify which immune populations associate with survival, and test whether immune cell scores or multi-dimensional immune profiles improve prognostic value beyond subtype classification alone. 
 
 # Methods
-
-This study makes use of the METABRIC dataset[@curtis2012genomic] available on CBioPortal[@cerami2012cbioportal; @gao2013integrative; @debruijn2023analysis], including clinical, gene expression and mutation datasets of 2,509 patients.
 
 ```{r setup, output=FALSE}
 #| label: setup
@@ -125,6 +127,8 @@ if (!require(RColorBrewer, quietly = TRUE))  install.packages("RColorBrewer")
 if (!require(multcompView, quietly = TRUE)) install.packages("multcompView")
 if (!require(ggrepel, quietly = TRUE))      install.packages("ggrepel")
 if (!require(cluster, quietly = TRUE))      install.packages("cluster")
+if (!require(kableExtra, quietly = TRUE))   install.packages("kableExtra")
+if (!require(circlize, quietly = TRUE))     install.packages("circlize")
 
 if (!require(BiocManager, quietly = TRUE))  install.packages("BiocManager")
 if (!require(ComplexHeatmap, quietly = TRUE)) BiocManager::install("ComplexHeatmap")
@@ -157,7 +161,7 @@ expr_file <- file.path(proc_dir, "expression_immune_markers.csv")
 #| output: false
 #| echo: true
 #| code-fold: true
-#| code-summary: "Data loading, immune cell scoring, and exploration"
+#| code-summary: "Click here to see how to pull fresh data straight from cBioPortal."
 # To pull fresh data from cBioPortal instead of using the included processed files,
 # delete the data/processed/ folder and re-render this document.
 source("scripts/00-data-cleaning.R")
@@ -165,8 +169,15 @@ source("scripts/01-immune-cell-scoring.R")
 source("scripts/02-task1-exploration.R")
 ```
 
-<!-- TODO: Methods prose -->
+This study makes use of the METABRIC dataset[@curtis2012genomic] available on cBioPortal[@cerami2012cbioportal; @gao2013integrative; @debruijn2023analysis], including clinical, gene expression and mutation datasets of 2,509 patients. For gene expression, the log2 intensity was used in place of the normalised z-score to preserve the proportions when applying the immune cell scoring. 
 
+The principle of avoiding circularity guided two data selection decisions. First, PAM50 subtypes were chosen over IntClust as IntClust subtypes are defined by copy number aberrations that can directly influence immune marker gene expression, and IntClust4 is already characterised by immune infiltration. The clear lack of overlap between the PAM50 and Danaher's immune cell gene panels also strengthened this choice. Second, the exclusion of Claudin-low patients. Claudin-low is another breast cancer subtype used alongside PAM50 subtypes on cBioPortal's METABRIC dataset, and is characterised by immune infiltration[@fougner2020claudinReDef]. Fougner et al.[@fougner2020claudinReDef] further demonstrated that Claudin-low is not an independent subtype in addition to the PAM50 subtypes, therefore patients of this category (n = `r sum(clinical$pam50_subtype == "claudin-low", na.rm = TRUE)`) were removed.
+
+Immune cell scoring is done by taking the mean log2 gene expression of the cell types' marker genes, originally defined by Danaher et al.[@danaher2017gene] and tabulated in [Table S1](#panel-tbl-s1). Of the 60 marker genes from the Danaher panel, only 58 genes have expression data in the METABRIC dataset. TPSB2 is missing for mast cells and XCL2 for NK cells. The CD4 T cell score is derived by subtracting the CD8 T cell score from the overall T cell score. The Danaher scoring method was chosen for its simplicity and marker genes validated against flow cytometry, in contrast to deconvolution approaches previously applied to this cohort[@jiang2020tumour].
+
+Immune variation across PAM50 subtypes was assessed by Kruskal-Wallis test with Wilcoxon for pairwise comparisons. Prognostic associations were evaluated using Cox proportional hazards models, first univariately and then multivariately to adjust for PAM50 subtypes, along with Kaplan-Meier curves with log-rank tests for visualisation. To develop multi-dimensional immune profiles, clusters were fitted via k-means with silhouette scoring. All p-values from multiple testing were corrected via Benjamini-Hochberg false discovery rate (FDR) and reported as FDR throughout. Overall survival was used for prognosis as the disease-specific survival data used by Curtis et al.[@curtis2012genomic] was not available on cBioPortal.
+
+::: {#panel-tbl-s1}
 ```{r methods-coverage}
 #| label: methods-coverage
 #| code-summary: "Show gene coverage for immune cell scoring"
@@ -175,20 +186,21 @@ coverage_df %>%
   summarise(
     Markers = n(),
     Found = sum(In_METABRIC),
-    Missing = paste(Gene[!In_METABRIC], collapse = ", "),
+    `Genes used` = paste(Gene[In_METABRIC], collapse = ", "),
+    `Genes missing` = paste(Gene[!In_METABRIC], collapse = ", "),
     .groups = "drop"
   ) %>%
-  mutate(Missing = ifelse(Missing == "", "\u2014", Missing)) %>%
+  mutate(`Genes missing` = ifelse(`Genes missing` == "", "\u2014", `Genes missing`)) %>%
   dplyr::rename(`Cell type` = Cell_type) %>%
   knitr::kable(format = "html") %>%
-  kableExtra::column_spec(1, width = "16em") %>%
-  kableExtra::column_spec(2, width = "8em") %>%
-  kableExtra::column_spec(3, width = "8em")
+  kableExtra::column_spec(1, width = "8em") %>%
+  kableExtra::column_spec(4, width = "24em")
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Table S1 - Immune marker gene coverage
-58 of 60 Danaher et. al[@danaher2017gene] marker genes spanning 14 cell types were available on the Illumina HT-12 v3 microarray. TPSB2 (Mast cells) and XCL2 (NK cells) are absent from the platform; scoring proceeds with remaining markers. A 15th cell type (CD4 T cells) is derived as the T-cell score minus the CD8 T-cell score.
+### Table S1 — Immune marker gene coverage
+Verifying the immune marker gene coverage on the Illumina HT-12 v3 microarray of METABRIC dataset.
+:::
 :::
 
 
@@ -203,8 +215,8 @@ tbl1
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Table 1 - Cohort characteristics by PAM50 subtype
-Baseline characteristics of 1,756 METABRIC patients with expression data, stratified by PAM50 intrinsic subtype. 218 claudin-low and 6 NC patients excluded. Continuous variables summarised as median (Q1, Q3); categorical as n (%). P-values from Kruskal-Wallis (continuous) or Pearson's Chi-squared (categorical) tests.
+### Table 1 — Cohort characteristics by PAM50 subtype
+Baseline characteristics of 1,756 METABRIC patients with expression data, stratified by PAM50 subtype. 218 claudin-low and 6 NC patients excluded. Continuous variables summarised as median (Q1, Q3); categorical as n (%). P-values from Kruskal-Wallis (continuous) or Pearson's Chi-squared (categorical) tests.
 :::
 :::
 
@@ -226,8 +238,8 @@ upset(
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Figure 1 - Data availability across modalities
-Vertical bars show patient counts for each combination of available data modalities; horizontal bars show totals per modality. Of 2,509 METABRIC patients, 1,859 have clinical, mutation, and expression (and hence PAM50) data. 529 patients lack expression data and consequently lack PAM50 classification.
+### Figure 1 — Data availability across modalities
+Intersection plot showing patient counts for each combination of available data modalities (N = 2,509).
 :::
 :::
 
@@ -240,6 +252,10 @@ n_no_expr <- sum(!clinical$has_expression)
 n_expr <- sum(clinical$has_expression)
 age_wilcox <- wilcox.test(no_expr_ages, expr_ages)
 ```
+
+- `r n_no_expr` patients without expression data
+- significantly younger than the `r n_expr` with expression data; Wilcoxon rank-sum p `r if(age_wilcox$p.value < 0.001) "< 0.001" else paste("=", sprintf("%.3f", age_wilcox$p.value))`
+- median age `r round(median(no_expr_ages, na.rm = TRUE), 1)` vs `r round(median(expr_ages, na.rm = TRUE), 1)` years
 
 The `r n_no_expr` patients without expression data were significantly younger than the `r n_expr` with expression data (median age `r round(median(no_expr_ages, na.rm = TRUE), 1)` vs `r round(median(expr_ages, na.rm = TRUE), 1)` years; Wilcoxon rank-sum p `r if(age_wilcox$p.value < 0.001) "< 0.001" else paste("=", sprintf("%.3f", age_wilcox$p.value))`).
 
@@ -309,7 +325,7 @@ if (length(sig_genes) > 0) {
     scale_x_discrete(labels = ct_labels) +
     theme_minimal() +
     theme(
-      axis.text.x = element_text(angle = 45, hjust = 1, size = 9),
+      axis.text.x = element_text(angle = 30, hjust = 1, size = 9),
       axis.text.y = element_text(angle = 30, hjust = 1, size = 9),
       panel.grid.major = element_line(colour = "grey92"),
       legend.position = "bottom",
@@ -329,8 +345,8 @@ if (length(sig_genes) > 0) {
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Figure 2 - Mutation-immune cell score associations
-Dot plot of median immune score differences (mutated minus wild-type) for genes with at least one significant association (BH FDR < 0.05) across 14 cell types. Only genes mutated in ≥10 patients were tested. Dot size encodes statistical significance (−log₁₀ FDR); fill colour encodes effect direction and magnitude (red = higher in mutated; blue = lower). Border colour indicates PAM50 adjustment status: black = significant after adjusting for intrinsic subtype (independent effect), lilac = significant unadjusted but lost after PAM50 adjustment (confounded by subtype), grey = not significant. Genes ordered by number of significant associations; y-axis labels show patient count and significant cell types per gene; x-axis labels show significant genes per cell type.
+### Figure 2 — Mutation-immune cell score associations
+Median immune cell score differences (mutated minus wild-type) for genes with at least one significant association across 14 cell types. Significance by Wilcoxon rank-sum test (FDR < 0.05); only genes mutated in ≥10 patients tested.
 :::
 :::
 
@@ -366,15 +382,15 @@ ggplot(tp53_adj, aes(x = adj_effect, y = neg_log_fdr)) +
   theme(legend.position = "bottom") +
   labs(
     x = "PAM50-adjusted effect (TP53 mutated vs wild-type)",
-    y = expression(-log[10](adjusted~FDR)),
+    y = expression(-log[10](FDR)),
     title = sprintf("TP53 mutation: %d/%d cell types significant after PAM50 adjustment",
                     n_tp53_sig, n_tp53_total)
   )
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Figure 3 - TP53 mutation and immune infiltration after PAM50 adjustment
-Volcano plot showing the association between TP53 mutation and each immune cell type score after adjusting for PAM50 intrinsic subtype via linear regression. X-axis shows the PAM50-adjusted effect size (coefficient for TP53 mutation status); y-axis shows statistical significance. Dashed line marks adjusted FDR = 0.05. TP53 mutation associates with broadly elevated immune infiltration independent of subtype, consistent with genomic instability driving neoantigen-mediated immune recruitment.
+### Figure 3 — TP53 mutation and immune infiltration after PAM50 adjustment
+PAM50-adjusted effect sizes from linear regression (x-axis) and significance (y-axis) for each immune cell type. Dashed line marks FDR = 0.05.
 :::
 :::
 
@@ -411,8 +427,8 @@ draw(Heatmap(
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Figure 4 - Immune cell score heatmap across PAM50 subtypes
-Z-scored immune cell type scores (rows) for 1,756 patients (columns), split by PAM50 subtype. Rows and columns are hierarchically clustered within each subtype. Blue indicates below-cohort-mean infiltration; red indicates above-cohort-mean infiltration.
+### Figure 4 — Immune cell score heatmap across PAM50 subtypes
+Z-scored immune cell scores for 1,756 patients, split and hierarchically clustered by PAM50 subtype. Blue = below-mean; red = above-mean infiltration.
 :::
 :::
 
@@ -463,8 +479,8 @@ ggplot(scores_violin, aes(x = pam50_subtype, y = score, fill = pam50_subtype)) +
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Figure 5 - Immune cell scores by PAM50 subtype
-Violin plots with embedded box plots for immune cell type scores across five PAM50 subtypes, restricted to cell types reaching Kruskal-Wallis FDR < 0.05. Compact letter display (CLD) annotations indicate pairwise statistical groupings from Wilcoxon rank-sum tests with Benjamini-Hochberg correction; subtypes sharing a letter do not differ significantly (p > 0.05). Each panel uses an independent y-axis.
+### Figure 5 — Immune cell scores by PAM50 subtype
+Violin plots with box plots for cell types reaching Kruskal-Wallis FDR < 0.05. Lettering above each subtype plot indicate similarity/difference, subtypes sharing a letter do not differ significantly (pairwise Wilcoxon, FDR < 0.05).
 :::
 :::
 
@@ -473,7 +489,7 @@ Violin plots with embedded box plots for immune cell type scores across five PAM
 
 ```{r q2-compute, output=FALSE}
 #| label: q2-compute
-source("scripts/05-q3-survival.R")
+source("scripts/05-q2-survival.R")
 ```
 
 ::: {#panel-q2-forest}
@@ -499,117 +515,190 @@ cox_results %>%
   arrange(fdr) %>%
   mutate(
     cell_type = gsub("_", " ", cell_type),
-    across(c(hr, hr_lower, hr_upper), ~ round(.x, 3)),
+    across(c(hr, hr_lower, hr_upper, concordance), ~ round(.x, 3)),
     across(c(p_value, fdr), fmt_p)
   ) %>%
   select(-n, -events) %>%
-  knitr::kable(col.names = c("Cell type", "HR", "Lower 95% CI", "Upper 95% CI", "p-value", "FDR"))
+  knitr::kable(col.names = c("Cell type", "HR", "Lower 95% CI", "Upper 95% CI", "p-value", "C-index", "FDR"), row.names = FALSE)
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Figure 6 / Table 2 - Univariate Cox regression: immune scores and overall survival
-Forest plot (above) and table of hazard ratios (per standard deviation increase) from univariate Cox proportional hazards models for each immune cell type score. Error bars show 95% confidence intervals. Red points indicate BH-adjusted FDR < 0.05; dashed line marks HR = 1 (no effect). Note: some cell types have 95% CIs excluding 1.0 (nominally significant) but are coloured grey because they do not survive FDR correction across 14 tests. N = 1,756 patients; 1,044 events (deaths).
+### Figure 6 / Table 2 — Univariate Cox regression: immune scores and overall survival
+Hazard ratios per SD increase from univariate Cox proportional hazards models for each immune cell type (FDR < 0.05).
 :::
 :::
 
-::: {#panel-q2-km}
-```{r q2-km-curves, fig.width=12, fig.height=8}
-#| label: q2-km-curves
-km_cell_types <- if (nrow(sig_cells) > 0) sig_cells$cell_type else {
-  cox_results %>% arrange(p_value) %>% head(2) %>% pull(cell_type)
-}
-km_plots <- lapply(km_cell_types, function(ct) {
-  plot_data <- surv_data
-  plot_data$group <- factor(
-    ifelse(plot_data[[ct]] >= median(plot_data[[ct]], na.rm = TRUE), "High", "Low"),
-    levels = c("Low", "High")
-  )
-  fit <- survfit(Surv(os_months, os_event) ~ group, data = plot_data)
-  ggsurvplot(
-    fit, data = plot_data,
-    pval = TRUE, pval.method = TRUE,
-    risk.table = TRUE, risk.table.height = 0.25,
-    palette = c("#377EB8", "#E41A1C"),
-    xlab = "Time (months)", ylab = "Overall survival",
-    legend.labs = c("Low", "High"),
-    title = gsub("_", " ", ct),
-    ggtheme = theme_minimal()
-  )
-})
-arrange_ggsurvplots(km_plots, ncol = 2)
-```
-
-::: {.callout-note appearance="minimal"}
-### Figure 7 - Kaplan-Meier survival curves for Mast cells and Macrophages
-Kaplan-Meier curves for the two immune cell types reaching FDR < 0.05 in univariate Cox regression: Mast cells (protective, HR = 0.885) and Macrophages (adverse, HR = 1.091). Patients split at the median score into High and Low groups. P-values from log-rank test.
-:::
-:::
+Despite reaching FDR significance, the best-performing single cell type (`r gsub("_", " ", sig_cells$cell_type[1])`) achieved a concordance of only `r round(sig_cells$concordance[1], 3)`, indicating modest discriminative ability. Given the strong subtype dependence of immune infiltration observed in Q1, we next asked whether adjusting for PAM50 subtype alters the prognostic landscape.
 
 
-## Immune Score Stratification Within PAM50 Subtypes
+## PAM50-Adjusted Immune Prognostic Analysis
 
 ```{r q3-within-compute, output=FALSE}
 #| label: q3-within-compute
 source("scripts/06-q3-within-subtype.R")
 ```
 
-Q2 identified `r best_ct_label` as the most prognostic immune cell type (lowest FDR). We next tested whether this score refines prognosis *within* individual PAM50 subtypes using per-subtype univariate Cox models (continuous `r best_ct_label` score, HR per SD increase).
-
-::: {#panel-q3-forest}
-```{r q3-within-forest, fig.width=8, fig.height=5}
-#| label: q3-within-forest
-# Build forest plot data: per-subtype rows + overall adjusted row
-forest_df <- within_cox %>%
-  select(subtype, hr, hr_lower, hr_upper, fdr) %>%
-  mutate(label = subtype, row_type = "subtype")
-
-overall_row <- data.frame(
-  subtype = "Overall (PAM50-adjusted)",
-  hr = adjusted_hr, hr_lower = adjusted_hr_lower, hr_upper = adjusted_hr_upper,
-  fdr = adjusted_p,  # use raw p for colouring (no FDR needed, single test)
-  label = "Overall (PAM50-adjusted)", row_type = "overall"
-)
-
-forest_df <- bind_rows(forest_df, overall_row) %>%
-  mutate(label = factor(label,
-    levels = c("Overall (PAM50-adjusted)",
-               within_cox$subtype[order(within_cox$hr)])))
-
-ggplot(forest_df, aes(x = hr, y = label)) +
-  geom_hline(yintercept = "Overall (PAM50-adjusted)",
-             linetype = "solid", colour = "grey85", linewidth = 6) +
-  geom_point(aes(colour = fdr < 0.05,
-                 shape = row_type), size = 3) +
-  geom_errorbarh(aes(xmin = hr_lower, xmax = hr_upper), height = 0.2) +
-  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey50") +
-  scale_colour_manual(
-    values = c("TRUE" = "#E41A1C", "FALSE" = "grey60"),
-    labels = c("TRUE" = "p < 0.05", "FALSE" = "NS"), name = NULL
-  ) +
-  scale_shape_manual(values = c("subtype" = 16, "overall" = 18), guide = "none") +
-  theme_minimal() +
-  labs(x = "Hazard Ratio (per SD, 95% CI)", y = NULL) +
-  theme(axis.text.y = element_text(size = 10), legend.position = "bottom")
+```{r q3-intro-text, results='asis'}
+#| label: q3-intro-text
+cat(sprintf(
+  "To account for subtype confounding, we fitted multivariable Cox models adjusting for PAM50 subtype for each of the 14 cell types. %d cell types reached FDR < 0.05 after adjustment (%s). For these, we additionally examined per-subtype effects.",
+  nrow(adj_sig_cells),
+  paste(gsub("_", " ", adj_sig_cells$cell_type), collapse = ", ")
+))
 ```
 
-```{r q3-within-table}
-#| label: q3-within-table
-within_summary %>%
+::: {#panel-q3-forest}
+```{r q3-within-forest, fig.width=11, fig.height=9}
+#| label: q3-within-forest
+# Build combined forest: overall adjusted rows + per-subtype rows for sig cell types
+overall_rows <- adj_sig_cells %>%
+  select(cell_type, hr, hr_lower, hr_upper, p_value) %>%
+  mutate(subtype = "Overall (PAM50-adjusted)", row_type = "overall")
+
+subtype_rows <- per_subtype_cox %>%
+  mutate(row_type = "subtype")
+
+forest_combined <- bind_rows(overall_rows, subtype_rows) %>%
   mutate(
-    across(c(hr, hr_lower, hr_upper), ~ round(.x, 3)),
+    label = gsub("_", " ", cell_type),
+    subtype_f = factor(subtype, levels = c(
+      "Overall (PAM50-adjusted)", "Basal-like", "HER2-Enriched",
+      "Luminal A", "Luminal B", "Normal-like"
+    )),
+    # Overall row: bold cell type name; subtype row: indented subtype name
+    row_label = ifelse(row_type == "overall", label,
+                       paste0("    ", as.character(subtype))),
+    row_uid = paste(label, row_label),
+    sig = ifelse(p_value < 0.05, "sig", "ns")
+  )
+
+# Order: group by cell type (adjusted p order), overall first then subtypes
+ct_order <- adj_sig_cells$cell_type
+forest_combined <- forest_combined %>%
+  arrange(match(cell_type, ct_order), subtype_f) %>%
+  mutate(row_uid = factor(row_uid, levels = rev(unique(row_uid))))
+
+# Display labels: strip the cell-type prefix used for uniqueness
+display_labels <- setNames(forest_combined$row_label, forest_combined$row_uid)
+
+# Grey band behind each overall (cell type header) row
+overall_band <- forest_combined %>%
+  filter(row_type == "overall") %>%
+  mutate(y_num = as.numeric(row_uid))
+
+ggplot(forest_combined, aes(x = hr, y = row_uid)) +
+  # Highlight band behind each overall row
+  geom_rect(data = overall_band,
+            aes(ymin = y_num - 0.45, ymax = y_num + 0.45),
+            xmin = -Inf, xmax = Inf, fill = "grey90",
+            inherit.aes = FALSE) +
+  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey50") +
+  geom_errorbarh(aes(xmin = hr_lower, xmax = hr_upper, colour = sig,
+                     linewidth = row_type), height = 0.2) +
+  geom_point(aes(colour = sig, shape = row_type, size = row_type)) +
+  scale_linewidth_manual(values = c("overall" = 0.9, "subtype" = 0.4), guide = "none") +
+  scale_colour_manual(
+    values = c("sig" = "#E41A1C", "ns" = "grey60"),
+    labels = c("sig" = "p < 0.05", "ns" = "NS"),
+    name = NULL,
+    guide = guide_legend(override.aes = list(size = 4, shape = 16))
+  ) +
+  scale_shape_manual(
+    values = c("overall" = 18, "subtype" = 16),
+    labels = c("overall" = "Overall (PAM50-adjusted)", "subtype" = "Per-subtype"),
+    name = NULL,
+    guide = guide_legend(override.aes = list(size = 4))
+  ) +
+  scale_size_manual(values = c("overall" = 5, "subtype" = 2.5), guide = "none") +
+  scale_y_discrete(labels = display_labels) +
+  labs(x = "Hazard Ratio per SD (95% CI)", y = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    plot.margin = margin(5, 15, 5, 5),
+    legend.position = "bottom",
+    legend.text = element_text(size = 11)
+  )
+```
+
+```{r q3-comparison-table}
+#| label: q3-comparison-table
+adjusted_cox %>%
+  mutate(
+    cell_type = gsub("_", " ", cell_type),
+    across(c(hr, hr_lower, hr_upper, concordance), ~ round(.x, 3)),
     across(c(p_value, fdr), fmt_p)
   ) %>%
-  select(-events) %>%
-  knitr::kable(col.names = c("PAM50 Subtype", "N", "HR", "Lower 95% CI", "Upper 95% CI", "p-value", "FDR"), row.names = FALSE)
+  select(cell_type, hr, hr_lower, hr_upper, p_value, fdr, concordance) %>%
+  knitr::kable(col.names = c("Cell type", "HR", "Lower 95% CI", "Upper 95% CI",
+    "p-value", "FDR", "C-index"), row.names = FALSE)
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Figure 8 / Table 3 - Per-subtype and PAM50-adjusted Cox regression: `r best_ct_label` score and overall survival
-Forest plot (above) and table of hazard ratios (per standard deviation increase in `r best_ct_label` score). Upper rows in forest plot: univariate Cox models fitted within each PAM50 subtype (BH-adjusted FDR across 5 tests). Bottom row: PAM50-adjusted multivariable Cox model (diamond). Dashed line marks HR = 1 (no effect).
+### Figure 7 / Table 3 — PAM50-adjusted Cox regression and per-subtype effects
+Cox proportional hazards models adjusted for PAM50 subtype. Forest plot shows the 4 cell types reaching FDR < 0.05; table shows all 14.
 :::
 :::
 
-An interaction model (`r best_ct_label` score × PAM50 subtype) confirmed that the prognostic effect did not significantly differ across subtypes (likelihood ratio test p = `r fmt_p(interaction_p)`), suggesting a consistent but variably powered signal. After adjusting for PAM50 subtype, `r best_ct_label` remained independently prognostic (HR = `r round(adjusted_hr, 3)` [`r round(adjusted_hr_lower, 3)`–`r round(adjusted_hr_upper, 3)`], p = `r fmt_p(adjusted_p)`).
+```{r q3-interaction-text, results='asis'}
+#| label: q3-interaction-text
+int_text <- interaction_tests %>%
+  mutate(label = gsub("_", " ", cell_type),
+         sig = ifelse(interaction_fdr < 0.05, "significant", "non-significant")) %>%
+  mutate(txt = sprintf("%s (p = %s, FDR = %s)", label, fmt_p(interaction_p), fmt_p(interaction_fdr)))
+
+sig_int <- int_text %>% filter(sig == "significant")
+ns_int  <- int_text %>% filter(sig == "non-significant")
+
+parts <- c()
+if (nrow(sig_int) > 0) {
+  parts <- c(parts, sprintf("significant heterogeneity across subtypes for %s",
+                             paste(sig_int$txt, collapse = " and ")))
+}
+if (nrow(ns_int) > 0) {
+  parts <- c(parts, sprintf("no significant heterogeneity for %s",
+                             paste(ns_int$txt, collapse = ", ")))
+}
+
+cat(sprintf(
+  "Interaction models (immune score × PAM50 subtype) revealed %s, suggesting that while the magnitude of the prognostic effect varies by subtype, the direction is broadly consistent.",
+  paste(parts, collapse = ", but ")
+))
+```
+
+::: {#panel-q3-km}
+```{r q3-km-curves, fig.width=12, fig.height=14}
+#| label: q3-km-curves
+# Whole-cohort KM curves for the Q3 FDR-significant cell types
+# These correspond to the overall PAM50-adjusted Cox results
+km_plots <- lapply(adj_sig_cells$cell_type, function(ct) {
+  plot_data <- surv_data
+  plot_data$group <- factor(
+    ifelse(plot_data[[ct]] >= median(plot_data[[ct]], na.rm = TRUE), "High", "Low"),
+    levels = c("Low", "High")
+  )
+  fit <- survfit(Surv(os_months, os_event) ~ group, data = plot_data)
+  adj_row <- adj_sig_cells %>% filter(cell_type == ct)
+  ggsurvplot(
+    fit, data = plot_data,
+    pval = TRUE, pval.method = TRUE,
+    risk.table = TRUE, risk.table.height = 0.3,
+    palette = c("#377EB8", "#E41A1C"),
+    xlab = "Time (months)", ylab = "Overall survival",
+    legend.labs = c("Low", "High"),
+    title = sprintf("%s (adj. HR = %.2f, FDR = %s)",
+                    gsub("_", " ", ct), adj_row$hr, fmt_p(adj_row$fdr)),
+    ggtheme = theme_minimal()
+  )
+})
+arrange_ggsurvplots(km_plots, ncol = 2, nrow = 2)
+```
+
+::: {.callout-note appearance="minimal"}
+### Figure 8 — Kaplan-Meier survival curves for PAM50-adjusted significant cell types
+Patients split at median score. P-values from log-rank test; titles show PAM50-adjusted HR and FDR.
+:::
+:::
 
 
 ## Aggregating Immune Scores via Clustering
@@ -619,48 +708,46 @@ An interaction model (`r best_ct_label` score × PAM50 subtype) confirmed that t
 source("scripts/07-extension.R")
 ```
 
-::: {#panel-ext-heatmap}
-```{r ext-heatmap, fig.width=9, fig.height=5}
-#| label: ext-heatmap
-# Cluster centroid heatmap
-centroid_long <- as.data.frame(cluster_centroids) %>%
+::: {#panel-ext-heatmaps}
+```{r ext-heatmaps, fig.width=9, fig.height=8}
+#| label: ext-heatmaps
+# All-14 cluster centroids
+centroid_all14 <- as.data.frame(cluster_centroids) %>%
   rownames_to_column("cluster") %>%
   pivot_longer(-cluster, names_to = "cell_type", values_to = "z_score") %>%
-  mutate(cell_type = gsub("_", " ", cell_type))
+  mutate(cell_type = gsub("_", " ", cell_type), panel = "All 14 cell types")
 
-ggplot(centroid_long, aes(x = cell_type, y = cluster, fill = z_score)) +
+# Sig-4 cluster centroids
+sig_centroids <- sig_km_final$centers
+sig_cl_means_plot <- rowMeans(sig_centroids)
+sig_cl_rank_plot  <- rank(-sig_cl_means_plot)
+rownames(sig_centroids) <- paste0("Sig Cluster ", sig_cl_rank_plot, " (n=",
+  table(sig_km_final$cluster)[as.character(seq_len(sig_optimal_k))], ")")
+
+centroid_sig4 <- as.data.frame(sig_centroids) %>%
+  rownames_to_column("cluster") %>%
+  pivot_longer(-cluster, names_to = "cell_type", values_to = "z_score") %>%
+  mutate(cell_type = gsub("_", " ", cell_type), panel = "4 significant cell types")
+
+centroid_both <- bind_rows(centroid_all14, centroid_sig4) %>%
+  mutate(panel = factor(panel, levels = c("All 14 cell types", "4 significant cell types")))
+
+ggplot(centroid_both, aes(y = cell_type, x = cluster, fill = z_score)) +
   geom_tile(colour = "white", linewidth = 0.5) +
-  geom_text(aes(label = round(z_score, 1)), size = 3) +
+  geom_text(aes(label = round(z_score, 1)), size = 2.8) +
   scale_fill_gradient2(low = "#3288BD", mid = "#FFFFBF", high = "#D53E4F",
-                       midpoint = 0, name = "Mean z-score") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+                       midpoint = 0, name = "Mean z-score",
+                       limits = max(abs(centroid_both$z_score)) * c(-1, 1)) +
+  facet_wrap(~ panel, scales = "free") +
+  theme_minimal(base_size = 11) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1),
+        strip.text = element_text(face = "bold")) +
   labs(x = NULL, y = NULL)
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Figure 9 - Immune cluster centroids
-Mean z-scored immune cell type profiles for `r optimal_k` patient clusters identified by k-means clustering on all 14 Danaher cell type scores. Clusters labelled by overall immune level (Cluster 1 = highest mean immune score). Red indicates above-average infiltration; blue indicates below-average.
-:::
-:::
-
-::: {#panel-ext-km}
-```{r ext-km, fig.width=10, fig.height=6}
-#| label: ext-km
-p_ext <- ggsurvplot(
-  cluster_fit, data = surv_data,
-  pval = TRUE, pval.method = TRUE,
-  risk.table = TRUE, risk.table.height = 0.25,
-  legend.labs = levels(surv_data$immune_cluster),
-  xlab = "Time (months)", ylab = "Overall survival",
-  ggtheme = theme_minimal()
-)
-print(p_ext)
-```
-
-::: {.callout-note appearance="minimal"}
-### Figure 10 - Overall survival by immune cluster
-Kaplan-Meier curves stratified by immune cluster membership. P-value from log-rank test across `r optimal_k` groups.
+### Figure 9 — Immune cluster centroids
+Mean z-scored immune cell type profiles for k-means clusters. **Left**: `r optimal_k` clusters from all 14 cell types. **Right**: `r sig_optimal_k` clusters from the 4 PAM50-adjusted significant cell types only. Clusters labelled by overall immune level. Red = above-average infiltration; blue = below-average.
 :::
 :::
 
@@ -671,68 +758,18 @@ comparison_df %>%
   mutate(
     concordance = round(concordance, 3),
     AIC = round(AIC, 1),
-    logrank_p = ifelse(is.na(logrank_p), "\u2014", fmt_p(logrank_p))
+    delta_AIC = round(delta_AIC, 1),
+    lr_p = ifelse(is.na(lr_p), "—", fmt_p(lr_p))
   ) %>%
-  knitr::kable(col.names = c("Model", "df", "Concordance", "AIC", "Log-rank p"))
+  knitr::kable(col.names = c("Model", "df", "Concordance", "AIC", "LR p vs PAM50", "ΔAIC"), row.names = FALSE)
 ```
 
 ::: {.callout-note appearance="minimal"}
-### Table 4 - Prognostic comparison: single cell type vs immune cluster
-Comparison of Cox proportional hazards models using the single most prognostic cell type (`r best_ct_label`, continuous per-SD) versus immune cluster membership (k=`r optimal_k`, factor). Concordance (C-index) measures discriminative ability; AIC penalises model complexity. Lower AIC indicates better fit.
+### Table 4 — Prognostic comparison: PAM50 baseline vs immune-augmented models
+LR test p-values against PAM50-only baseline. ΔAIC relative to baseline (negative = better fit).
 :::
 :::
 
-
-## Extension Exploration (temporary — pick one) {.unnumbered}
-
-```{r ext-explore, output=FALSE}
-#| label: ext-explore
-source("scripts/08-extension-explore.R")
-```
-
-**B: Treatment × mast cell interaction**
-
-- Chemo × mast cell interaction LRT p = `r fmt_p(chemo_int_p)` (n=`r nrow(chemo_data)`)
-- Hormone × mast cell interaction LRT p = `r fmt_p(hormone_int_p)` (n=`r nrow(hormone_data)`)
-
-```{r ext-b-table}
-#| label: ext-b-table
-bind_rows(chemo_strat, hormone_strat) %>%
-  mutate(across(c(hr, hr_lower, hr_upper), ~round(.x, 3)),
-         p_value = fmt_p(p_value)) %>%
-  knitr::kable(col.names = c("Group", "N", "Events", "HR", "Lower", "Upper", "p"))
-```
-
-**C: TP53 × mast cell interaction**
-
-`r if (!is.na(tp53_int_p)) sprintf("TP53 × mast cell interaction LRT p = %s (n=%d)", fmt_p(tp53_int_p), nrow(ext_data_c)) else "TP53 not available"`
-
-```{r ext-c-table}
-#| label: ext-c-table
-if (!is.null(tp53_strat)) {
-  tp53_strat %>%
-    mutate(across(c(hr, hr_lower, hr_upper), ~round(.x, 3)),
-           p_value = fmt_p(p_value)) %>%
-    knitr::kable(col.names = c("Group", "N", "Events", "HR", "Lower", "Upper", "p"))
-}
-```
-
-**E: Relapse-free survival replication**
-
-- RFS univariate: HR = `r round(rfs_hr, 3)` [`r round(rfs_hr_lower, 3)`–`r round(rfs_hr_upper, 3)`], p = `r fmt_p(rfs_p)` (n=`r nrow(rfs_data)`, `r s_rfs_uni$nevent` events)
-- RFS PAM50-adjusted: HR = `r round(rfs_adj_hr, 3)` [`r round(rfs_adj_hr_lower, 3)`–`r round(rfs_adj_hr_upper, 3)`], p = `r fmt_p(rfs_adj_p)`
-- RFS screening: `r n_rfs_sig`/14 cell types FDR < 0.05
-
-```{r ext-e-table}
-#| label: ext-e-table
-rfs_cox_results %>%
-  arrange(fdr) %>%
-  mutate(cell_type = gsub("_", " ", cell_type),
-         across(c(hr, hr_lower, hr_upper), ~round(.x, 3)),
-         across(c(p_value, fdr), fmt_p)) %>%
-  select(-n, -events) %>%
-  knitr::kable(col.names = c("Cell type", "HR", "Lower", "Upper", "p-value", "FDR"))
-```
 
 # Discussion
 
@@ -750,3 +787,5 @@ rfs_cox_results %>%
 # Addendum
 
 Even if my day job is somewhat cancer adjacent, diving deep into this METABRIC dataset made me feel like a novice when it came to cancer / breast cancer. But it has been fun seeing what we learn in class come together in more ways than one. The lead authors for the immune cell scoring paper are from the company NanoString Technologies, the same company that has the commercial PAM50 test kit that we learned in class. And in the same paper, they cite the false discovery rate (FDR) correction paper from Benjamini and Hochberg!
+
+This whole assignment has been a rollercoaster ride, and there were so many rabbit holes that this topic would lead you into. For example Danaher didn't make it easy for me when they tweaked the TIL acronym, usually meaning tumour infiltrating lymphocytes, to sneak in leukocytes in the palce of lymphocytes, so that the immune cells of myeloid origin could be included in the paper. The inclusion of Claudin-low

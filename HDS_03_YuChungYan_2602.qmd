@@ -95,7 +95,7 @@ The ability for immune cells to infiltrate the tumour microenvironment (TME) pla
 
 # Introduction
 
-Tumour cells evading the detection and wrath of the immune system is a recognised hallmark of cancer[@hanahan2011hallmarks], and breast cancer is no exception[@gildelalcazar2020immune]. The interplay between tumour cells, immune cells and other local factors form the tumour microenvironment (TME), and research in the TME of breast cancers has yielded clinical applications[@li2021TME]. The amount of tumour infiltrating immune cells in breast cancers has shown prognostic value[@salgado2015evaluation], and this amount and prognostic impact varies across breast cancer's molecular subtypes[@stanton2016clinical]. These subtypes are defined by gene expression[@perou2000molecular], and are popularised and commercialised as the PAM50 gene expression panel, which has its own prognostic significance[@parker2009supervised]. The subtypes include luminal A, luminal B, HER2-enriched, basal-like and normal-like.
+Tumour cells evading the detection and wrath of the immune system is a recognised hallmark of cancer[@hanahan2011hallmarks], and breast cancer is no exception[@gildelalcazar2020immune]. The interplay between tumour cells, immune cells and other local factors form the tumour microenvironment (TME), and research in the TME of breast cancers has yielded clinical applications[@li2021TME]. The amount of tumour infiltrating immune cells in breast cancers has shown prognostic value[@salgado2015evaluation], and this amount and prognostic impact varies across breast cancer's molecular subtypes[@stanton2016clinical]. These subtypes are defined by gene expression[@perou2000molecular], and are popularised and commercialised as the PAM50 gene expression panel, which has its own prognostic significance[@parker2009supervised]. The subtypes include Luminal A, Luminal B, HER2-Enriched, Basal-like and Normal-like.
 
 The METABRIC cohort from Curtis et al.[@curtis2012genomic] is one of the larger datasets on breast cancer containing clinical, gene expression and mutation data of 2,509 patients. METABRIC's analysis has already shown immune infiltration in one of their integrative clusters (IntClust4), showing deletions in T cell receptors and mRNA amplification for immune cell activity, but stopped short of fully characterising the immune cells involved. Jiang et al.[@jiang2020tumour] characterised immune cell infiltration in the METABRIC cohort using CIBERSORT[@newman2015CIBERSORT], developing new immunotypes with prognostic significance. However, CIBERSORT is more of a black box model, a computational approach using deconvolution to estimate cell proportions from RNA mixtures. Therefore there exists a need to use a transparent approach to score immune cell infiltration in METABRIC's breast tumour samples, and scrutinise any prognostic value from such scoring.
 
@@ -175,8 +175,6 @@ The principle of avoiding circularity guided two data selection decisions. First
 
 Immune cell scoring is done by taking the mean log2 gene expression of the cell types' marker genes, originally defined by Danaher et al.[@danaher2017gene] and tabulated in [Table S1](#panel-tbl-s1). Of the 60 marker genes from the Danaher panel, only 58 genes have expression data in the METABRIC dataset. TPSB2 is missing for mast cells and XCL2 for NK cells. The CD4 T cell score is derived by subtracting the CD8 T cell score from the overall T cell score. The Danaher scoring method was chosen for its simplicity and marker genes validated against flow cytometry, in contrast to deconvolution approaches previously applied to this cohort[@jiang2020tumour].
 
-Immune variation across PAM50 subtypes was assessed by Kruskal-Wallis test with Wilcoxon for pairwise comparisons. Prognostic associations were evaluated using Cox proportional hazards models, first univariately and then multivariately to adjust for PAM50 subtypes, along with Kaplan-Meier curves with log-rank tests for visualisation. To develop multi-dimensional immune profiles, clusters were fitted via k-means with silhouette scoring. All p-values from multiple testing were corrected via Benjamini-Hochberg false discovery rate (FDR) and reported as FDR throughout. Overall survival was used for prognosis as the disease-specific survival data used by Curtis et al.[@curtis2012genomic] was not available on cBioPortal.
-
 ::: {#panel-tbl-s1}
 ```{r methods-coverage}
 #| label: methods-coverage
@@ -203,22 +201,13 @@ Verifying the immune marker gene coverage on the Illumina HT-12 v3 microarray of
 :::
 :::
 
+Immune variation across PAM50 subtypes was assessed by Kruskal-Wallis test with Wilcoxon for pairwise comparisons. Prognostic associations were evaluated using Cox proportional hazards models, first univariately and then multivariately to adjust for PAM50 subtypes, along with Kaplan-Meier curves with log-rank tests for visualisation. To develop multi-dimensional immune profiles, clusters were fitted via k-means with silhouette scoring. All p-values from multiple testing were corrected via Benjamini-Hochberg false discovery rate (FDR) and reported as FDR throughout. Overall survival was used for prognosis as the disease-specific survival data used by Curtis et al.[@curtis2012genomic] was not available on cBioPortal.
+
+The whole analysis is stored in this [GitHub repository](https://github.com/joelyu/HDS-W3.git), including the `environment.yml` tracking the packages used, including ComplexHeatmap[@gu2016complex; @complexHeatmap2022], survival[@survival-package; @survival-book], survminer[@survminer-package] and cBioPortalData[@ramos2020multiomic].
 
 # Results
 
 ## Cohort Summary and Mutation Landscape
-
-::: {#panel-cohort-table}
-```{r task1-table1}
-#| label: task1-table1
-tbl1
-```
-
-::: {.callout-note appearance="minimal"}
-### Table 1 — Cohort characteristics by PAM50 subtype
-Baseline characteristics of 1,756 METABRIC patients with expression data, stratified by PAM50 subtype. 218 claudin-low and 6 NC patients excluded. Continuous variables summarised as median (Q1, Q3); categorical as n (%). P-values from Kruskal-Wallis (continuous) or Pearson's Chi-squared (categorical) tests.
-:::
-:::
 
 ::: {#panel-upset}
 ```{r task1-upset, fig.width=10, fig.height=6}
@@ -253,11 +242,21 @@ n_expr <- sum(clinical$has_expression)
 age_wilcox <- wilcox.test(no_expr_ages, expr_ages)
 ```
 
-- `r n_no_expr` patients without expression data
-- significantly younger than the `r n_expr` with expression data; Wilcoxon rank-sum p `r if(age_wilcox$p.value < 0.001) "< 0.001" else paste("=", sprintf("%.3f", age_wilcox$p.value))`
-- median age `r round(median(no_expr_ages, na.rm = TRUE), 1)` vs `r round(median(expr_ages, na.rm = TRUE), 1)` years
+From the n = `r nrow(clinical)` METABRIC cohort, `r n_no_expr` patients were without expression data ([Figure 1](#panel-upset)). These were significantly younger than the `r n_expr` with expression data (median age `r round(median(no_expr_ages, na.rm = TRUE), 1)` vs `r round(median(expr_ages, na.rm = TRUE), 1)` years; Wilcoxon rank-sum p `r if(age_wilcox$p.value < 0.001) "< 0.001" else paste("=", sprintf("%.3f", age_wilcox$p.value))`). The further removal of patients with Claudin-low (n=`r sum(clinical$pam50_subtype == "claudin-low", na.rm = TRUE)`) and NC (Not Classified, n=`r sum(clinical$pam50_subtype == "NC", na.rm = TRUE)`) left `r nrow(table_data)` patients for further analysis.
 
-The `r n_no_expr` patients without expression data were significantly younger than the `r n_expr` with expression data (median age `r round(median(no_expr_ages, na.rm = TRUE), 1)` vs `r round(median(expr_ages, na.rm = TRUE), 1)` years; Wilcoxon rank-sum p `r if(age_wilcox$p.value < 0.001) "< 0.001" else paste("=", sprintf("%.3f", age_wilcox$p.value))`).
+::: {#panel-cohort-table}
+```{r task1-table1}
+#| label: task1-table1
+tbl1
+```
+
+::: {.callout-note appearance="minimal"}
+### Table 1 — Cohort characteristics by PAM50 subtype
+Baseline characteristics of 1,756 METABRIC patients with expression data, stratified by PAM50 subtype. Continuous variables summarised as median (Q1, Q3); categorical as n (%). P-values from Kruskal-Wallis (continuous) or Pearson's Chi-squared (categorical) tests.
+:::
+:::
+
+Of the `r nrow(table_data)` patients, Luminal A is the largest group at 40%, with basal-like and HER2-enriched being smaller and also younger. Overall 41% survived, with HER2-enriched having the worst survival at 30%. Median follow-up length is almost 10 years, sufficient for long term survival analysis via Cox models.
 
 ```{r task1-mutations-compute, output=FALSE}
 #| label: task1-mutations-compute

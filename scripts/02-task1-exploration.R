@@ -2,8 +2,8 @@
 # 02-task1-exploration.R
 # Data Exploration — COMPUTATION ONLY
 #
-# Produces objects: clinical, membership, n_expr_pam50, n_expr_mut,
-#                   tbl1, coverage_df
+# Produces objects: clinical (with has_expression column), membership,
+#                   tbl1, coverage_df, maf
 #
 # Expects: scores_df, expr_mat, immune_markers from 01-immune-cell-scoring.R
 # =============================================================================
@@ -114,7 +114,9 @@ tbl1 <- table_data %>%
   ) %>%
   add_overall() %>%
   add_p() %>%
-  bold_labels()
+  bold_labels() %>%
+  modify_header(all_stat_cols() ~ "**{level}**<br>N = {n} ({style_percent(p)}%)") %>%
+  modify_footnote(everything() ~ NA)
 
 # --- Danaher marker gene coverage ---
 coverage_df <- tibble(
@@ -125,7 +127,7 @@ coverage_df <- tibble(
 
 # --- Summary ------------------------------------------------------------------
 message(sprintf(
-  "Cohort: %d clinical | %d expression | %d mutations | %d PAM50 | Working: Q1/Q3 %d, Q2 %d",
+  "Cohort: %d clinical | %d expression | %d mutations | %d PAM50 | Working: Q1-Q3 %d, Exploratory %d",
   nrow(clinical),
   length(expr_patients),
   length(mut_patients),

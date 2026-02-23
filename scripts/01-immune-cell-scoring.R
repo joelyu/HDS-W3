@@ -15,7 +15,7 @@
 if (!exists("proc_dir"))  proc_dir  <- file.path("data", "processed")
 if (!exists("expr_file")) expr_file <- file.path(proc_dir, "expression_immune_markers.csv")
 
-# --- 14 cell types, 62 marker genes (single source of truth) -----------------
+# --- 14 cell types, 60 marker genes (single source of truth) -----------------
 # CD4 derived below as T-cell score minus CD8 score (r=0.65 vs flow cytometry)
 source("scripts/_immune_markers.R")
 
@@ -51,13 +51,14 @@ scores_list <- lapply(immune_markers, compute_cell_score, expr_matrix = expr_mat
 scores_list[["CD4 T cells"]] <- scores_list[["T-cells"]] - scores_list[["CD8 T cells"]]
 
 scores_mat <- do.call(rbind, scores_list)
+rownames(scores_mat) <- gsub("[ -]", "_", rownames(scores_mat))
 colnames(scores_mat) <- colnames(expr_mat)
 
 # Transpose to patient-rows format
 scores_df <- scores_mat %>%
   t() %>%
   as.data.frame() %>%
-  rownames_to_column("PATIENT_ID")
+  rownames_to_column("patient_id")
 
 # Clean column names (spaces/hyphens → underscores for safe read.csv round-trips)
 colnames(scores_df) <- gsub("[ -]", "_", colnames(scores_df))
@@ -67,9 +68,15 @@ write.csv(scores_df, file.path(proc_dir, "immune_scores.csv"), row.names = FALSE
 
 # --- Summary ------------------------------------------------------------------
 message(sprintf(
-  "Immune scoring: %d genes x %d patients | Coverage: %d/%d markers | %d scores (14 cell types + T-cells parent)%s",
+  "Immune scoring: %d genes x %d patients | Coverage: %d/%d markers | %d scores (14 from marker list + CD4 derived)",
   nrow(expr_mat), ncol(expr_mat),
   length(found), length(all_markers),
-  nrow(scores_mat),
-  if (length(missing) > 0) paste0(" | Missing: ", paste(missing, collapse = ", ")) else ""
+  nrow(scores_mat)
 ))
+if (length(missing) > 0) {
+  for (g in missing) {
+    ct <- names(which(sapply(immune_markers, function(x) g %in% x)))
+    message(sprintf("  missing: %s (%s, %d/%d markers available)",
+                    g, ct, sum(immune_markers[[ct]] %in% found), length(immune_markers[[ct]])))
+  }
+}

@@ -19,39 +19,42 @@ pam50_colours <- setNames(
 scores_clin <- scores_df %>%
   inner_join(
     clinical %>% select(patient_id, pam50_subtype),
-    by = c("PATIENT_ID" = "patient_id")
+    by = "patient_id"
   ) %>%
   filter(!is.na(pam50_subtype) & pam50_subtype != "" &
-         pam50_subtype != "NC" & pam50_subtype != "claudin-low")
+    pam50_subtype != "NC" & pam50_subtype != "claudin-low")
 
 # --- 2. Heatmap data: 14 cell types (drop T-cells parent) --------------------
-cell_types <- setdiff(rownames(scores_mat), "T-cells")
+cell_types <- setdiff(rownames(scores_mat), "T_cells")
 
 pam50_map <- setNames(clinical$pam50_subtype, clinical$patient_id)
 heatmap_patients <- intersect(
   colnames(scores_mat),
   names(pam50_map[!is.na(pam50_map) & pam50_map != "" &
-                  pam50_map != "NC" & pam50_map != "claudin-low"])
+    pam50_map != "NC" & pam50_map != "claudin-low"])
 )
 heatmap_mat <- scores_mat[cell_types, heatmap_patients]
 heatmap_z <- t(scale(t(heatmap_mat)))
 pam50_vals <- pam50_map[heatmap_patients]
 
 # --- 3. Long format for violin plots ------------------------------------------
-score_cols <- setdiff(colnames(scores_df), c("PATIENT_ID", "T_cells"))
+score_cols <- setdiff(colnames(scores_df), c("patient_id", "T_cells"))
 
 scores_long <- scores_clin %>%
-  select(PATIENT_ID, pam50_subtype, all_of(score_cols)) %>%
+  select(patient_id, pam50_subtype, all_of(score_cols)) %>%
   pivot_longer(cols = all_of(score_cols), names_to = "cell_type", values_to = "score") %>%
   mutate(cell_type = gsub("_", " ", cell_type))
 
 # --- 4. Kruskal-Wallis per cell type with BH FDR correction ------------------
 kw_results <- scores_long %>%
   group_by(cell_type) %>%
-  summarise({
-    kt <- kruskal.test(score ~ pam50_subtype)
-    data.frame(kw_stat = kt$statistic, kw_p = kt$p.value)
-  }, .groups = "drop") %>%
+  summarise(
+    {
+      kt <- kruskal.test(score ~ pam50_subtype)
+      data.frame(kw_stat = kt$statistic, kw_p = kt$p.value)
+    },
+    .groups = "drop"
+  ) %>%
   mutate(kw_fdr = p.adjust(kw_p, method = "BH"))
 
 # --- 5. Pairwise Wilcoxon (for in-text reference) ----------------------------
@@ -63,18 +66,14 @@ pw_results <- scores_long %>%
   )
 
 # --- 6. Compact letter display from pairwise Wilcoxon ------------------------
-if (!requireNamespace("multcompView", quietly = TRUE)) {
-  install.packages("multcompView")
-}
-
-cld_df <- purrr::map_dfr(seq_len(nrow(pw_results)), function(i) {
+cld_df <- purrr::map(seq_len(nrow(pw_results)), function(i) {
   ct <- pw_results$cell_type[i]
   pmat <- pw_results$pw[[i]]$p.value
 
   # Replace hyphens in group names — multcompLetters splits on "-"
   all_groups <- unique(c(colnames(pmat), rownames(pmat)))
   safe_map <- setNames(gsub("-", ".", all_groups), all_groups)
-  rev_map  <- setNames(names(safe_map), safe_map)
+  rev_map <- setNames(names(safe_map), safe_map)
   rownames(pmat) <- safe_map[rownames(pmat)]
   colnames(pmat) <- safe_map[colnames(pmat)]
 
@@ -96,7 +95,7 @@ cld_df <- purrr::map_dfr(seq_len(nrow(pw_results)), function(i) {
     cld_letter = unname(letters),
     stringsAsFactors = FALSE
   )
-})
+}) %>% dplyr::bind_rows()
 
 # --- Summary ------------------------------------------------------------------
 message(sprintf(

@@ -2,7 +2,7 @@
 
 ## Immune Cell Infiltration in METABRIC
 
-This is the submission GitHub repository for the Module 3 Assignment for the MSt program in Healthcare Data Science, exploring the infiltration of immune cells of tumour samples of the METABRIC breast cancer dataset using the marker gene scoring from Danaher et al. (2017).
+This is the submission GitHub repository for the Module 3 Assignment for the MSt program in Healthcare Data Science, exploring the infiltration of immune cells of tumour samples of the METABRIC breast cancer dataset using the marker gene scoring from Danaher et al. (2017). A live build of the rendered page is [here](https://joelyu.github.io/HDS-W3/HDS_03_YuChungYan_2602.html).
 
 ### Environment Setup
 

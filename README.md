@@ -70,3 +70,7 @@ Scripts must run in order: each depends on objects produced by earlier scripts.
 ### Data
 
 METABRIC dataset (Curtis et al. 2012) obtained from [cBioPortal](https://www.cbioportal.org/study/summary?id=brca_metabric) via the cBioPortal API. Cleaned datasets are committed in `data/processed/`. The data pipeline is local-first: `scripts/00-data-cleaning.R` uses the committed files if they exist, and only calls the cBioPortal API when they are missing.
+
+### License
+
+Code and analysis: CC BY 4.0. METABRIC data: ODbL v1.0. See `LICENSE.txt` for details.

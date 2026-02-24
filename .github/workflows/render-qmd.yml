@@ -43,7 +43,7 @@ jobs:
 
       - name: Install Bioconductor packages
         run: |
-          Rscript -e 'options(repos = c(CRAN = "https://cloud.r-project.org")); if (!require("BiocManager")) install.packages("BiocManager"); BiocManager::install(c("ComplexHeatmap", "maftools", "cBioPortalData"), ask = FALSE, update = FALSE)'
+          Rscript -e 'options(repos = c(CRAN = "https://cloud.r-project.org")); if (!require("BiocManager")) install.packages("BiocManager"); BiocManager::install(c("ComplexHeatmap", "cBioPortalData"), ask = FALSE, update = FALSE)'
 
       - name: Render QMD to HTML
         run: quarto render HDS_03_YuChungYan_2602.qmd

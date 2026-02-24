@@ -150,6 +150,11 @@ ht_opt$message <- FALSE
 library(ggpubr)
 library(patchwork)
 library(RColorBrewer)
+library(multcompView)
+library(ggrepel)
+library(cluster)
+library(kableExtra)
+library(circlize)
 
 # --- P-value formatter: 3 decimals, or <0.001 ---
 fmt_p <- function(p) ifelse(p < 0.001, "<0.001", sprintf("%.3f", p))

@@ -16,7 +16,7 @@ mamba env create -f environment.yml
 mamba activate immfiltration
 
 # Install Bioconductor packages (bioconda dependency chains broken on osx-arm64)
-Rscript -e 'if (!require("BiocManager")) install.packages("BiocManager"); BiocManager::install(c("ComplexHeatmap", "maftools", "cBioPortalData"))'
+Rscript -e 'if (!require("BiocManager")) install.packages("BiocManager"); BiocManager::install(c("ComplexHeatmap", "cBioPortalData"))'
 ```
 
 Bioconductor packages are also auto-installed via `if(!require)` in the qmd setup chunk.

@@ -17,8 +17,8 @@ format:
     toc-depth: 2
     embed-resources: true
     theme:
-      dark: darkly
       light: flatly
+      dark: darkly
 ---
 
 # Cover Page {.unnumbered .unlisted}

@@ -201,13 +201,28 @@ Verifying the immune marker gene coverage on the Illumina HT-12 v3 microarray of
 :::
 :::
 
-Immune variation across PAM50 subtypes was assessed by Kruskal-Wallis test with Wilcoxon for pairwise comparisons. Prognostic associations were evaluated using Cox proportional hazards models, first univariately and then multivariately to adjust for PAM50 subtypes, along with Kaplan-Meier curves with log-rank tests for visualisation. To develop multi-dimensional immune profiles, clusters were fitted via k-means with silhouette scoring. All p-values from multiple testing were corrected via Benjamini-Hochberg false discovery rate (FDR) and reported as FDR throughout. Overall survival was used for prognosis as the disease-specific survival data used by Curtis et al.[@curtis2012genomic] was not available on cBioPortal.
+[Immune variation across PAM50 subtypes](#immune-infiltration-across-pam50-subtypes) was assessed by Kruskal-Wallis test with Wilcoxon for pairwise comparisons. [Immune-mutation associations](#immune-mutation-associations) were tested via Wilcoxon rank-sum for genes mutated in ≥ 10 patients to provide statistical power; these were further adjusted for PAM50 subtypes via linear regression. [Prognostic associations](#immune-scores-and-overall-survival) were evaluated using Cox proportional hazards models, first univariately and then multivariately to [adjust for PAM50 subtypes](#pam50-adjusted-immune-prognostic-analysis), along with Kaplan-Meier curves with log-rank tests for visualisation. Interaction between immune scores and PAM50 subtypes was tested by likelihood ratio comparison of models with and without the interaction term. Immune cell scores were standardised first to yield per-standard-deviation hazard ratios. To develop [multi-dimensional immune profiles](#aggregating-immune-scores-via-clustering), clusters were fitted via k-means with silhouette scoring. All p-values from multiple testing were corrected via Benjamini-Hochberg false discovery rate (FDR) and reported as FDR throughout. Overall survival was used for prognosis as the disease-specific survival data used by Curtis et al.[@curtis2012genomic] was not available on cBioPortal.
 
 The whole analysis is stored in this [GitHub repository](https://github.com/joelyu/HDS-W3.git), including the `environment.yml` tracking the packages used, including ComplexHeatmap[@gu2016complex; @complexHeatmap2022], survival[@survival-package; @survival-book], survminer[@survminer-package] and cBioPortalData[@ramos2020multiomic].
 
 # Results
 
 ## Cohort Summary and Mutation Landscape
+
+```{r task1-missing-age}
+#| label: task1-missing-age
+#| code-summary: "Compare age between patients with and without expression data"
+expr_ages <- clinical$age_at_diagnosis[clinical$has_expression]
+no_expr_ages <- clinical$age_at_diagnosis[!clinical$has_expression]
+n_no_expr <- sum(!clinical$has_expression)
+n_expr <- sum(clinical$has_expression)
+age_wilcox <- wilcox.test(no_expr_ages, expr_ages)
+```
+
+
+From the n = `r nrow(clinical)` METABRIC cohort, `r n_no_expr` patients were without expression data ([Figure 1](#panel-upset)). These were significantly younger than the `r n_expr` with expression data (median age `r round(median(no_expr_ages, na.rm = TRUE), 1)` vs `r round(median(expr_ages, na.rm = TRUE), 1)` years; Wilcoxon rank-sum p `r if(age_wilcox$p.value < 0.001) "< 0.001" else paste("=", sprintf("%.3f", age_wilcox$p.value))`). The further removal of patients with Claudin-low (n=`r sum(clinical$pam50_subtype == "claudin-low", na.rm = TRUE)`) and NC (Not Classified, n=`r sum(clinical$pam50_subtype == "NC", na.rm = TRUE)`) left `r nrow(table_data)` patients for further analysis.
+
+In [Table 1](#panel-cohort-table), of the `r nrow(table_data)` patients, Luminal A is the largest group at 40%, with basal-like and HER2-enriched being smaller and also younger. Overall 41% survived, with HER2-enriched having the worst survival at 30%. Median follow-up length is almost 10 years, sufficient for long term survival analysis via Cox models.
 
 ::: {#panel-upset}
 ```{r task1-upset, fig.width=10, fig.height=6}
@@ -232,18 +247,6 @@ Intersection plot showing patient counts for each combination of available data 
 :::
 :::
 
-```{r task1-missing-age}
-#| label: task1-missing-age
-#| code-summary: "Compare age between patients with and without expression data"
-expr_ages <- clinical$age_at_diagnosis[clinical$has_expression]
-no_expr_ages <- clinical$age_at_diagnosis[!clinical$has_expression]
-n_no_expr <- sum(!clinical$has_expression)
-n_expr <- sum(clinical$has_expression)
-age_wilcox <- wilcox.test(no_expr_ages, expr_ages)
-```
-
-From the n = `r nrow(clinical)` METABRIC cohort, `r n_no_expr` patients were without expression data ([Figure 1](#panel-upset)). These were significantly younger than the `r n_expr` with expression data (median age `r round(median(no_expr_ages, na.rm = TRUE), 1)` vs `r round(median(expr_ages, na.rm = TRUE), 1)` years; Wilcoxon rank-sum p `r if(age_wilcox$p.value < 0.001) "< 0.001" else paste("=", sprintf("%.3f", age_wilcox$p.value))`). The further removal of patients with Claudin-low (n=`r sum(clinical$pam50_subtype == "claudin-low", na.rm = TRUE)`) and NC (Not Classified, n=`r sum(clinical$pam50_subtype == "NC", na.rm = TRUE)`) left `r nrow(table_data)` patients for further analysis.
-
 ::: {#panel-cohort-table}
 ```{r task1-table1}
 #| label: task1-table1
@@ -256,12 +259,14 @@ Baseline characteristics of 1,756 METABRIC patients with expression data, strati
 :::
 :::
 
-Of the `r nrow(table_data)` patients, Luminal A is the largest group at 40%, with basal-like and HER2-enriched being smaller and also younger. Overall 41% survived, with HER2-enriched having the worst survival at 30%. Median follow-up length is almost 10 years, sufficient for long term survival analysis via Cox models.
-
 ```{r task1-mutations-compute, output=FALSE}
 #| label: task1-mutations-compute
 source("scripts/04-mutation-exploration.R")
 ```
+
+### Immune-mutation associations
+
+Of the `r length(testable_genes)` genes mutated in more than 10 patients, `r n_unadj_sig` gene-cell type pairs reached FDR < 0.05 ([Figure 2](#panel-dotplot)). However, only `r n_adj_sig` remain after correcting for PAM50 subtypes. TP53 stands out as mutations in this gene significantly elevate immune cell scores in 8 cell types, seen in detail in [Figure 3](#panel-volcano). These elevated cell types are broadly involved in the cytotoxic response, particularly CD8 T cells, cytotoxic cells and mature natural killer (NK) cells (NK CD56dim). This is consistent with TP53 mutations driving genomic instability and neoantigen production that triggers cytotoxic immune response. To investigate beyond mutation-driven effects on immune infiltration, [subtype-driven effects](#immune-infiltration-across-pam50-subtypes) were investigated next.
 
 ::: {#panel-dotplot}
 ```{r task1-dotplot, fig.width=9, fig.height=9}
@@ -401,6 +406,12 @@ PAM50-adjusted effect sizes from linear regression (x-axis) and significance (y-
 source("scripts/03-q1-pam50-immune.R")
 ```
 
+Overall, immune infiltration varied across cell types and PAM50 subtypes as seen in [Figure 4](#panel-heatmap). 12 of 14 cell types showed significant differences across PAM50 subtypes ([Figure 5](#panel-violin), FDR < 0.05). Even within PAM50 subtypes, considerable heterogeneity remained across different cell types. The two cell types that did not differ significantly were NK and regulatory T (Treg) cells. For the significant cell types, several patterns emerged.
+
+Among these, B cells, CD4 T cells, CD8 T cells, exhausted CD8 T cells, cytotoxic cells and mature NKs followed the pattern of being enriched in HER2-enriched and Basal-like subtypes, and relatively depleted in Luminal A and B subtypes, with no significant difference between the two high or the two low subtypes. Mast cells presented a different pattern, where HER2-enriched, Basal-like, Luminal A and B subtypes were all statistically different from each other. Strikingly, the Basal-like subtype had the lowest score out of all subtypes, a trend not seen in other cell types. CD45, the pan-leukocyte marker, showed naturally less distinct groupings but adhered to the overall trend of high infiltration in Basal-like tumours and low infiltration in Luminal A. Other cell types showed more heterogeneous patterns across the subtypes. Normal-like tumours did not show a consistent pattern across cell types, sharing similarities with different subtypes across cell types.
+
+Given the broad and significant differences in immune infiltration among PAM50 subtypes, the [impact of immune infiltration on survival](#immune-scores-and-overall-survival) was investigated next. 
+
 ::: {#panel-heatmap}
 ```{r q1-heatmap, fig.width=9, fig.height=10}
 #| label: q1-heatmap
@@ -410,6 +421,7 @@ ha <- HeatmapAnnotation(
   show_legend = TRUE,
   annotation_legend_param = list(PAM50 = list(direction = "horizontal", nrow = 1))
 )
+rownames(heatmap_z) <- gsub("_", " ", rownames(heatmap_z))
 draw(Heatmap(
   heatmap_z, name = "Z-score",
   col = circlize::colorRamp2(c(-2, 0, 2), c("#3288BD", "#FFFFBF", "#D53E4F")),
@@ -491,6 +503,11 @@ Violin plots with box plots for cell types reaching Kruskal-Wallis FDR < 0.05. L
 source("scripts/05-q2-survival.R")
 ```
 
+Among the `r cox_results$n[1]` patients with complete survival data (`r cox_results$events[1]` deaths), only two of the 14 cell types showed significance after FDR correction ([Figure 6/Table 2](#panel-q2-forest)). Mast cells, the cell type that showed uniquely low infiltration in Basal-like tumours, were associated with an 11.5% reduction in hazard (HR 0.885, FDR = 0.002), consistent with the protective role reported in other studies [@rajput2008stromal]. Conversely, macrophage scores were associated with a 9.1% increase in hazard (HR 1.091, FDR = 0.031). The remaining 12 cell types, including established tumour infiltrating lymphocytes (TILs) such as T cells and NK cells did not show significance after FDR correction. However, given that [immune scores covary strongly with PAM50 subtypes](#immune-infiltration-across-pam50-subtypes), and PAM50 is itself prognostic, these univariate models could be confounded. The true prognostic effects of these cell types could be masked by PAM50 subtypes. Even `r gsub("_", " ", sig_cells$cell_type[1])`, the best-performing cell type, achieved a concordance (C-index) of only `r round(sig_cells$concordance[1], 3)`, indicating modest discriminative ability.
+
+This prompted [further PAM50-adjusted analysis](#pam50-adjusted-immune-prognostic-analysis) to discern the immune-infiltration-driven effects from PAM50-subtype-driven effects on survival differences.
+
+
 ::: {#panel-q2-forest}
 ```{r q2-forest, fig.width=10, fig.height=6}
 #| label: q2-forest
@@ -527,7 +544,6 @@ Hazard ratios per SD increase from univariate Cox proportional hazards models fo
 :::
 :::
 
-Despite reaching FDR significance, the best-performing single cell type (`r gsub("_", " ", sig_cells$cell_type[1])`) achieved a concordance of only `r round(sig_cells$concordance[1], 3)`, indicating modest discriminative ability. Given the strong subtype dependence of immune infiltration observed in Q1, we next asked whether adjusting for PAM50 subtype alters the prognostic landscape.
 
 
 ## PAM50-Adjusted Immune Prognostic Analysis
@@ -537,14 +553,13 @@ Despite reaching FDR significance, the best-performing single cell type (`r gsub
 source("scripts/06-q3-within-subtype.R")
 ```
 
-```{r q3-intro-text, results='asis'}
-#| label: q3-intro-text
-cat(sprintf(
-  "To account for subtype confounding, we fitted multivariable Cox models adjusting for PAM50 subtype for each of the 14 cell types. %d cell types reached FDR < 0.05 after adjustment (%s). For these, we additionally examined per-subtype effects.",
-  nrow(adj_sig_cells),
-  paste(gsub("_", " ", adj_sig_cells$cell_type), collapse = ", ")
-))
-```
+After adjusting for PAM50 subtype confounding via multivariate Cox models, `r nrow(adj_sig_cells)` of 14 cell types showed significant effects on survival compared to 2/14 pre-adjustment. B cells, cytotoxic cells and CD8 T cells gained significance while macrophages lost significance, mast cells retained significance but their effects were less pronounced after adjustment. As seen in [Figure 7](#panel-q3-forest), all four cell types showed protective hazard ratios: B cells (HR = `r round(adj_sig_cells$hr[adj_sig_cells$cell_type == "B_cells"], 3)`, FDR = `r fmt_p(adj_sig_cells$fdr[adj_sig_cells$cell_type == "B_cells"])`), cytotoxic cells (HR = `r round(adj_sig_cells$hr[adj_sig_cells$cell_type == "Cytotoxic_cells"], 3)`, FDR = `r fmt_p(adj_sig_cells$fdr[adj_sig_cells$cell_type == "Cytotoxic_cells"])`), CD8 T cells (HR = `r round(adj_sig_cells$hr[adj_sig_cells$cell_type == "CD8_T_cells"], 3)`, FDR = `r fmt_p(adj_sig_cells$fdr[adj_sig_cells$cell_type == "CD8_T_cells"])`), mast cells (HR = `r round(adj_sig_cells$hr[adj_sig_cells$cell_type == "Mast_cells"], 3)`, FDR = `r fmt_p(adj_sig_cells$fdr[adj_sig_cells$cell_type == "Mast_cells"])`). Macrophages losing significance even before FDR adjustment suggests that significance [shown prior](#immune-scores-and-overall-survival) was likely due to PAM50 subtype confounding. Kaplan-Meier curves splitting patients at median cell scores confirmed significant survival separation for all four cell types ([Figure 8](#panel-q3-km), log-rank p < 0.05).
+
+Delving deeper for each significant cell type, per-subtype effects revealed which subtypes drove the overall associations, except for Normal-like tumours, which had consistently wide confidence intervals across cell types, likely due to its small population. As the overall adjusted effects were protective for all significant cell types, no subtypes showed significantly adverse effects. For B cells, both Basal-like and HER2-enriched subtypes showed significant protective ratios, while the Luminal B subtype trended in the opposite direction, though this did not reach significance. For cytotoxic cells and CD8 T cells, only the HER2-enriched subtype showed significant protective ratios. Mast cells, the only cell type that was also significant in the univariate analysis, showed significant protective effects in the Luminal A subtype instead.
+
+Further analysis via interaction models confirmed that per-subtype variation was not statistically significant after FDR correction, although B cells showed borderline heterogeneity (p = 0.047, FDR = 0.189), consistent with the opposing trend observed in the Luminal B subtype. The remaining three cell types (cytotoxic cells, CD8 T cells, mast cells) showed no statistically significant heterogeneity, suggesting the protective effects were broadly consistent across subtypes.
+
+Even if four cell types showed improved survival after adjusting for PAM50 subtype, concordance was still modest, with C-index staying below 0.6 ([Table 3](#panel-q3-forest)). As an attempt to extract more prognostic value from immune cell scores, immune cell scores were [aggregated via clustering](#aggregating-immune-scores-via-clustering) and compared with single immune cell scores.
 
 ::: {#panel-q3-forest}
 ```{r q3-within-forest, fig.width=11, fig.height=9}
@@ -639,31 +654,6 @@ Cox proportional hazards models adjusted for PAM50 subtype. Forest plot shows th
 :::
 :::
 
-```{r q3-interaction-text, results='asis'}
-#| label: q3-interaction-text
-int_text <- interaction_tests %>%
-  mutate(label = gsub("_", " ", cell_type),
-         sig = ifelse(interaction_fdr < 0.05, "significant", "non-significant")) %>%
-  mutate(txt = sprintf("%s (p = %s, FDR = %s)", label, fmt_p(interaction_p), fmt_p(interaction_fdr)))
-
-sig_int <- int_text %>% filter(sig == "significant")
-ns_int  <- int_text %>% filter(sig == "non-significant")
-
-parts <- c()
-if (nrow(sig_int) > 0) {
-  parts <- c(parts, sprintf("significant heterogeneity across subtypes for %s",
-                             paste(sig_int$txt, collapse = " and ")))
-}
-if (nrow(ns_int) > 0) {
-  parts <- c(parts, sprintf("no significant heterogeneity for %s",
-                             paste(ns_int$txt, collapse = ", ")))
-}
-
-cat(sprintf(
-  "Interaction models (immune score × PAM50 subtype) revealed %s, suggesting that while the magnitude of the prognostic effect varies by subtype, the direction is broadly consistent.",
-  paste(parts, collapse = ", but ")
-))
-```
 
 ::: {#panel-q3-km}
 ```{r q3-km-curves, fig.width=12, fig.height=14}
@@ -706,6 +696,13 @@ Patients split at median score. P-values from log-rank test; titles show PAM50-a
 #| label: ext-compute
 source("scripts/07-extension.R")
 ```
+Two clustering approaches were employed and compared, one using all 14 cell type scores, and one restricted to the four cell types that reached prognostic significance after PAM50 adjustment, to test whether focusing on prognostically relevant cell types would improve clustering performance. Both models were also compared against single cell scores and a model with only PAM50 as the baseline.
+
+The two clustering profiles ([Figure 9](#panel-ext-heatmaps)) revealed clear hot vs cold splits for most cell types, including the [prognostic cell types revealed by PAM50 subtype adjustment](#pam50-adjusted-immune-prognostic-analysis): B cells, CD8 T cells, cytotoxic cells. One notable exception was mast cells, which failed to split, showing near-zero mean z-scores in both clusters in both profiles.
+
+Comparing all the models together against the PAM50 only baseline model ([Table 4](#panel-ext-comparison)), all single cell score models significantly improved on the PAM50 baseline model, with the B cell model gaining the most (∆AIC = -10.1, p < 0.001). Both clustering models failed to improve on the baseline model, with the 4-significant-cell model showing non-significant gains (p = 0.086, ∆AIC = -0.9), and the all-14-cell model performing worse than the baseline (p = 0.314, ∆AIC = 1.0).
+
+The failure of the clustering models could be explained by the lack of clear splitting of the mast cells. Mast cells had shown [prognostic relevance](#pam50-adjusted-immune-prognostic-analysis), but their variation deviated from the main pattern of immune-hot-cold split captured by the clustering, diluting their signal when aggregated.
 
 ::: {#panel-ext-heatmaps}
 ```{r ext-heatmaps, fig.width=9, fig.height=8}
@@ -746,7 +743,7 @@ ggplot(centroid_both, aes(y = cell_type, x = cluster, fill = z_score)) +
 
 ::: {.callout-note appearance="minimal"}
 ### Figure 9 — Immune cluster centroids
-Mean z-scored immune cell type profiles for k-means clusters. **Left**: `r optimal_k` clusters from all 14 cell types. **Right**: `r sig_optimal_k` clusters from the 4 PAM50-adjusted significant cell types only. Clusters labelled by overall immune level. Red = above-average infiltration; blue = below-average.
+Mean z-scored immune cell type profiles for k-means clusters. <br> **Left**: `r optimal_k` clusters from all 14 cell types. <br> **Right**: `r sig_optimal_k` clusters from the 4 PAM50-adjusted significant cell types only. Clusters labelled by overall immune level. Red = above-average infiltration; blue = below-average.
 :::
 :::
 

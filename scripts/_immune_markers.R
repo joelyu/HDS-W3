@@ -31,7 +31,7 @@ immune_markers <- list(
   "Mast cells"      = c("TPSAB1", "TPSB2", "CPA3", "MS4A2", "HDC"),
   "Neutrophils"     = c("FPR1", "SIGLEC5", "CSF3R", "FCAR", "FCGR3B",
                          "CEACAM3", "S100A12"),
-  "NK CD56dim"      = c("KIR2DL3", "KIR3DL1", "KIR3DL2", "IL21R"),
+  "Mature NK"       = c("KIR2DL3", "KIR3DL1", "KIR3DL2", "IL21R"),
   "NK cells"        = c("XCL1", "XCL2", "NCR1"),
   "T-cells"         = c("CD6", "CD3D", "CD3E", "SH2D1A", "TRAT1", "CD3G"),
   "Th1 cells"       = c("TBX21"),

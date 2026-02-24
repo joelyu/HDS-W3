@@ -33,7 +33,7 @@ format:
 
 |   |   |
 |---|---|
-|I confirm that I have fully read and understood the assignment brief for this module.| **Y** |
+|I confirm that I have fully read and understood the [assignment brief](https://vle.pace.cam.ac.uk/mod/page/view.php?id=2419694) for this module.| **Y** |
 
 #### Details
 
@@ -65,15 +65,19 @@ For each of the questions, do not spend too long answering – keep it brief. Fo
 
 1. Which aspects of this assignment are you most uncertain about and/or would most like to receive feedback on?
 
+- It's my first time fitting Cox models, I hope this was done correctly.
 
 2. What elements are you left pondering after this assignment that you would like to discuss further?
 
+- Just from vibes it feels CIBERSORT is more popular than the approach that I used, I would love to get some insider info on how researchers see these tools.
 
 3. How have you incorporated feedback from peers and tutors into this assignment?
 
+- I thought long and hard if and why should I do clustering in the end. I hope I have enough good reasons to justify it, and its inclusion added to the analysis.
 
 4. How, and to what extent, have you been able to incorporate feedback on previous course work into this assignment?
 
+- More mindful of the word count, and also tried harder to express the right level of certainty with my claims.
 
 5. Using the wording in the rubric, how would you describe the quality of the different aspects of your work?
 
@@ -88,6 +92,7 @@ For each of the questions, do not spend too long answering – keep it brief. Fo
 |How have you used or changed the generative AI's output| My collated notes always stay in point form so that I write out the paragraphs in my own words. Feedback provided by the GenAI models are weighed and assessed before being acted on. |
 
 
+> The GitHub repository of this project is found at [https://github.com/joelyu/HDS-W3](https://github.com/joelyu/HDS-W3).
 
 # Abstract
 
@@ -799,4 +804,4 @@ Using immune cell marker genes from Danaher et al., 14 immune cell types were qu
 
 Even if my day job is somewhat cancer adjacent, diving deep into this METABRIC dataset made me feel like a novice when it came to cancer / breast cancer. But it has been fun seeing what we learn in class come together in more ways than one. The lead authors for the immune cell scoring paper are from the company NanoString Technologies, the same company that has the commercial PAM50 test kit that we learned in class. And in the same paper, they cite the false discovery rate (FDR) correction paper from Benjamini and Hochberg!
 
-This whole assignment has been a rollercoaster ride, and there were so many rabbit holes that this topic would lead you into. For example Danaher didn't make it easy for me when they tweaked the TIL acronym, usually meaning tumour infiltrating lymphocytes, to sneak in leukocytes in the palce of lymphocytes, so that the immune cells of myeloid origin could be included in the paper. The inclusion of Claudin-low in the dataset also sent me down a rabbit hole on what is this new "subtype". More good chills-inducingly, the lead author for one of the METABRIC-CIBERSORT papers (and the CD8[@ali2014association]), Dr. Raza Ali, is from the same group that gave us the METABRIC paper, and he is actually here in Cambridge right now! Would send him an email once I recover from this assignment.
+This whole assignment has been a rollercoaster ride, and there were so many rabbit holes that this topic would lead you into. For example Danaher didn't make it easy for me when they tweaked the TIL acronym, usually meaning tumour infiltrating lymphocytes, to sneak in leukocytes in the palce of lymphocytes, so that the immune cells of myeloid origin could be included in the paper. The inclusion of Claudin-low in the dataset also sent me down a rabbit hole on what is this new "subtype". More good chills-inducingly, the lead author for one of the METABRIC-CIBERSORT papers (and the CD8[@ali2014association]), Dr. Raza Ali, is from the same group that gave us the METABRIC paper, and he is actually here in Cambridge right now! Would send him an email once I recover from this assignment. Originally, I didn't even plan to do the multivariate Cox models, but I came across Ali's paper on CD8 infiltration, which didn't show up in my univariate analysis. That pushed my over the edge to try multivariate, and I'd like to think it was a good thing that I did, because it unveiled the PAM50 subtyping confounding.

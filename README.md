@@ -59,7 +59,7 @@ Scripts must run in order: each depends on objects produced by earlier scripts.
 │   └── 07-extension.R                # Extension: immune clustering
 ├── data/processed/                   # Cleaned datasets (committed)
 │   ├── clinical.csv                  # Patient + sample clinical merged
-│   ├── mutations.maf                 # Stripped MAF for maftools
+│   ├── mutations.maf                 # Stripped MAF (mutation data)
 │   └── expression_immune_markers.csv # 60 marker genes, log2 intensity
 ├── references.bib
 ├── environment.yml                   # Mamba environment spec

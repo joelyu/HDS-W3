@@ -63,7 +63,7 @@ Scripts must run in order: each depends on objects produced by earlier scripts.
 │   └── expression_immune_markers.csv # 60 marker genes, log2 intensity
 ├── references.bib
 ├── environment.yml                   # Mamba environment spec
-├── nature.csl / vancouver.csl        # Citation styles
+├── nature.csl                        # Citation style
 └── README.md
 ```
 

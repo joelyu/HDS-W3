@@ -35,7 +35,6 @@
 .positron/
 .positron-settings/
 .rstudio/
-.Rproj.user/
 
 # Logs
 *.log
@@ -48,14 +47,11 @@
 renv/library/
 renv/staging/
 
-# Don't ignore these important files for assignment submission
-!*.Rmd
-!*.qmd
-!*.html
-!*.md
-!data/
-!README.md
+# Quarto
+.quarto/
+_freeze/
 
-# Data: commit processed/, ignore large raw files
+# Data: commit processed/, ignore large raw files and derived artifacts
 data/brca_metabric/metabric-large/
 data/METABRIC data-20260209/
+data/processed/immune_scores.csv

@@ -12,9 +12,6 @@ dependencies:
   # Data wrangling
   - r-tidyverse
   # Visualisation
-  - r-pheatmap
-  - r-ggpubr
-  - r-patchwork
   - r-rcolorbrewer
   - r-ggrepel
   # Colour ramps (used by ComplexHeatmap)
@@ -29,8 +26,6 @@ dependencies:
   - r-kableextra
   # UpSet plots
   - r-upsetr
-  # Forest plots
-  - r-forestplot
   # Compact letter display for pairwise comparisons
   - r-multcompview
   # System dependency for Bioconductor packages (rtracklayer → cBioPortalData)

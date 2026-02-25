@@ -28,8 +28,9 @@ dependencies:
   - r-upsetr
   # Compact letter display for pairwise comparisons
   - r-multcompview
-  # System dependency for Bioconductor packages (rtracklayer → cBioPortalData)
+  # System dependencies for Bioconductor packages (rtracklayer → cBioPortalData)
   - r-xml
+  - zlib
   # Bioconductor — bioconda dependency chains broken on osx-arm64 (as of Feb 2026).
   # After creating env, install from R:
   #   Rscript -e 'options(repos = c(CRAN = "https://cloud.r-project.org")); install.packages("BiocManager"); BiocManager::install(c("ComplexHeatmap", "cBioPortalData"))'

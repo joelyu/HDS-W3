@@ -40,9 +40,9 @@ format:
 |   |   |
 |---|---|
 |Name: Chung Yan|Surname: Yu|
-|Submission Date|  |
-|Word Count: whole assignment including codes|  |
-|Word Count: main body excluding abstract, references and supplementary materials|  |
+|Submission Date| 26/02/2026  |
+|Word Count: whole assignment including codes| 13,979 |
+|Word Count: main body excluding abstract, references and supplementary materials| 2870 |
 
 #### Permission to share your assignment
 
